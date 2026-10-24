@@ -19,12 +19,11 @@ export default function LiveCamera({ videoRef, status, placeName }) {
         <p className="camera-note">
           {status === 'starting'
             ? 'Waking the mirror…'
-            : `The mirror can't see — camera blocked or unavailable. ${CONFIG.allowDemoCapture ? 'Tap the wand to conjure a demo vision.' : 'Allow camera access and use HTTPS or localhost.'}`}
+            : `The mirror can't see — camera blocked or unavailable. ${CONFIG.allowDemoCapture ? 'Tap the shutter to conjure a demo vision.' : 'Allow camera access and use HTTPS or localhost.'}`}
         </p>
       )}
       <div className="camera-strip">
         <span className="mono"><i className={`dot ${status === 'ready' ? 'live' : ''}`} /> {STATUS_LABELS[status] ?? 'No signal'}</span>
-        <em>Live capture</em>
       </div>
     </div>
   );

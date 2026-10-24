@@ -11,7 +11,7 @@ export default function ProfileScreen() {
 
   return (
     <>
-      <ScreenHeader title="My Grimoire" subtitle="Your rank, your sparkle." />
+      <ScreenHeader title="My Grimoire" />
       <GlassCard><ProfilePanel person={user} isSelf /></GlassCard>
 
       <h3 className="section-title">My sightings</h3>

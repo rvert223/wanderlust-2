@@ -37,14 +37,14 @@
 .photo-pill .icon { width: 11px; height: 11px; }
 
 /* ---- TopBar ---- */
-.top-bar { position: sticky; top: 0; z-index: 45; display: flex; flex-direction: column; gap: 8px; margin: 0 -16px 4px; padding: 12px 16px 10px; background: var(--bg); }
-.top-row { display: flex; align-items: center; gap: 12px; padding: 0 4px; }
-.top-mark { display: grid; place-items: center; color: var(--text); font-size: 1.1rem; }
+.top-bar { position: sticky; top: 0; z-index: 45; margin: 0 -16px 4px; padding: 12px 16px 10px; background: var(--bg); }
+.top-row { display: flex; align-items: center; gap: 12px; }
 .theme-toggle {
+  flex: none;
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   border: 1px solid var(--border-strong);
   background: var(--surface);
@@ -54,23 +54,9 @@
 }
 .theme-toggle .icon { width: 16px; height: 16px; }
 .theme-toggle:hover { background: var(--fill); }
-.top-avatar { margin-left: auto; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 50%; }
-.top-location { display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: -2px; font-size: 0.6rem; color: var(--text-muted); }
+.top-avatar { flex: none; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 50%; }
+.top-location { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 0.6rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .top-location .icon { width: 11px; height: 11px; }
-.segmented { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--seg-bg); border: 1px solid var(--border); }
-.segment {
-  flex: 1;
-  padding: 9px 6px;
-  border: 0;
-  border-radius: 999px;
-  cursor: pointer;
-  font: var(--label-weight) 0.8rem var(--font-label);
-  color: var(--text);
-  background: transparent;
-  transition: background 0.2s, color 0.2s;
-}
-.segment:hover { background: var(--fill-strong); }
-.segment.active { font-weight: 700; color: var(--on-seg-active); background: var(--seg-active); }
 
 /* ---- MagicButton ---- */
 .magic-btn {
@@ -90,11 +76,13 @@
 .magic-btn:hover:not(:disabled) { filter: brightness(1.06); }
 .magic-btn:active:not(:disabled) { transform: scale(0.98); }
 .magic-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.magic-btn .icon { width: 16px; height: 16px; }
 .magic-btn.ghost { color: var(--text); background: transparent; border-color: var(--border-strong); }
 .magic-btn.ghost:hover:not(:disabled) { background: var(--fill); filter: none; }
 .actions { display: flex; gap: 10px; margin-top: 8px; }
 .actions.wrap { flex-wrap: wrap; }
 .actions > .magic-btn { flex: 1; }
+.actions.wrap > .magic-btn { flex: 1 1 calc(50% - 5px); }
 
 /* ---- Chip ---- */
 .chips { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 4px; scrollbar-width: none; }
@@ -112,6 +100,7 @@
 }
 .chip:hover { background: var(--fill-strong); }
 .chip.active { color: var(--on-chip-active); background: var(--chip-active); border-color: transparent; }
+.chip .icon { width: 14px; height: 14px; margin-right: 4px; vertical-align: -2px; }
 
 /* ---- PotionMeter ---- */
 .potion-meter { display: inline-flex; gap: 3px; vertical-align: middle; }
@@ -127,7 +116,8 @@
   place-items: center;
   width: var(--size);
   height: var(--size);
-  font-size: calc(var(--size) * 0.55);
+  font: 600 calc(var(--size) * 0.38) var(--font-body);
+  color: var(--text);
   border-radius: 50%;
   background: var(--avatar-bg);
   box-shadow: 0 0 0 1px var(--border-strong);
@@ -184,19 +174,36 @@
   border: 0;
   cursor: pointer;
   background: none;
-  font: 500 0.76rem var(--font-body);
+  font: 500 0.74rem var(--font-body);
   color: var(--text-muted);
   transition: color 0.2s;
 }
-:root[data-theme='dark'] .nav-tab { font-weight: 700; font-size: 0.68rem; }
+:root[data-theme='dark'] .nav-tab { font-weight: 700; font-size: 0.66rem; }
 .nav-icon { display: grid; place-items: center; font-size: 1.15rem; }
 .nav-tab:hover, .nav-tab.active { color: var(--text); }
 .nav-tab.active .nav-label { text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.nav-tab.center {
+  flex: none;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  margin: -26px 6px 0;
+  padding: 0;
+  border-radius: 50%;
+  color: var(--on-accent);
+  background: var(--accent);
+  box-shadow: 0 0 0 5px var(--bg), 0 0 0 6px var(--border-strong);
+}
+.nav-tab.center .nav-icon { font-size: 1.45rem; }
+.nav-tab.center .nav-label { display: none; }
+.nav-tab.center.active { background: var(--accent-deep); color: var(--on-seg-active); }
+:root[data-theme='dark'] .nav-tab.center.active { background: #c3e3d2; color: var(--on-accent); }
 
 /* ---- ToastStack ---- */
 .toast-stack { position: fixed; z-index: 70; top: 12px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; width: min(440px, calc(100% - 24px)); }
 .toast { display: flex; gap: 12px; padding: 12px 14px; cursor: pointer; animation: drop 0.3s ease-out; background: var(--panel); border-color: var(--border-strong); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18); }
-.toast-emoji { font-size: 1.4rem; }
+.toast-icon { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; background: var(--fill); }
+.toast.danger .toast-icon { color: var(--danger); background: color-mix(in srgb, var(--danger) 14%, transparent); }
 .toast strong { font-weight: 600; }
 .toast p { font-size: 0.85rem; margin-top: 2px; }
 .toast small { display: block; margin-top: 4px; font-size: 0.7rem; color: var(--text-muted); }
@@ -206,7 +213,7 @@
 /* ---- ProfileSheet / ProfilePanel ---- */
 .sheet-backdrop { position: fixed; inset: 0; z-index: 55; display: flex; align-items: flex-end; justify-content: center; background: var(--backdrop); animation: fade 0.25s; }
 .sheet { width: min(480px, 100%); max-height: 88vh; overflow-y: auto; padding: 30px 18px 34px; border-radius: 24px 24px 0 0; background: var(--panel); animation: sheetUp 0.3s ease-out; }
-.sheet-close { position: absolute; top: 12px; right: 14px; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border-strong); background: transparent; cursor: pointer; }
+.sheet-close { position: absolute; top: 12px; right: 14px; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border-strong); background: transparent; cursor: pointer; }
 .profile { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
 .profile h2 { font-size: 2rem; line-height: 1.1; }
 .handle { color: var(--text-muted); font: 600 0.66rem var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; }
@@ -228,10 +235,9 @@
 
 /* ---- MagicMirror (Realm header + search) ---- */
 .mirror { display: flex; flex-direction: column; gap: 10px; }
-.mirror-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.mirror-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .mirror-title { font-size: 2rem; font-weight: 500; line-height: 1.05; }
-.mirror-tagline { margin-top: 4px; font-size: 0.6rem; line-height: 1.5; font-weight: 600; color: var(--text-muted); }
-.count-pill { flex: none; display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 6px 11px; border-radius: 999px; font: 600 0.66rem var(--font-mono); background: var(--fill-strong); }
+.count-pill { flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 999px; font: 600 0.66rem var(--font-mono); background: var(--fill-strong); }
 .count-pill .dot { color: var(--accent); }
 .mirror-search { position: relative; display: block; }
 .mirror-search .icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
@@ -258,7 +264,7 @@
 .pin-ring, .pin-core { transform-box: fill-box; transform-origin: center; }
 .pin-ring { fill: none; }
 .pin-core { fill: var(--pin-core); stroke: var(--c); stroke-width: 1.2; transition: transform 0.2s; }
-.pin-emoji { font-size: 6px; text-anchor: middle; pointer-events: none; }
+.pin-dot { fill: var(--c); pointer-events: none; }
 .pin:hover .pin-core, .pin:focus .pin-core { transform: scale(1.25); }
 .pin.hazard .pin-ring { fill: var(--danger-solid); opacity: 0.45; animation: pinPulse 1.6s ease-out infinite; }
 .pin.hazard .pin-core { stroke: var(--danger-solid); }
@@ -276,7 +282,7 @@
 .sighting-art { position: relative; display: grid; place-items: center; height: 168px; overflow: hidden; background: color-mix(in srgb, var(--accent-color) 22%, var(--surface-2)); }
 .sighting.expanded .sighting-art { height: 220px; }
 .sighting-art img { width: 100%; height: 100%; object-fit: cover; }
-.sighting-emoji { font-size: 4.2rem; }
+.sighting-placeholder { display: grid; place-items: center; width: 72px; height: 72px; border-radius: 50%; font-size: 2rem; color: color-mix(in srgb, var(--accent-color) 70%, var(--text)); background: color-mix(in srgb, var(--surface) 55%, transparent); }
 .sighting-cat { top: 12px; left: 12px; }
 .sighting-when { top: 12px; right: 12px; }
 .sighting-body { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px 16px; background: var(--card-body); }

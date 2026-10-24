@@ -4,13 +4,14 @@
 import { useAsync } from '../hooks/useAsync';
 import { badgesFor, getPotionBio, rankFor } from '../services/profileService';
 import { useApp } from '../state/AppContext';
+import Icon from './Icon';
 import Avatar from './Avatar';
 import MagicButton from './MagicButton';
 
 const STAT_TILES = [
-  { key: 'posted', label: 'Images posted', emoji: '📸' },
-  { key: 'helped', label: 'People helped', emoji: '🧪' },
-  { key: 'scanned', label: 'Plants scanned', emoji: '🔍' },
+  { key: 'posted', label: 'Images posted' },
+  { key: 'helped', label: 'People helped' },
+  { key: 'scanned', label: 'Plants scanned' },
 ];
 
 export default function ProfilePanel({ person, isSelf }) {
@@ -20,10 +21,10 @@ export default function ProfilePanel({ person, isSelf }) {
 
   return (
     <div className="profile">
-      <Avatar emoji={person.emoji} verified={person.verified} size={84} />
+      <Avatar name={person.name} verified={person.verified} size={84} />
       <h2>{person.name}</h2>
       <p className="handle">{person.handle} · {person.title}</p>
-      {person.verified && <span className="verify-badge verified">✔ Community verified</span>}
+      {person.verified && <span className="verify-badge verified">Community verified</span>}
 
       <div className="rank">
         <strong>{rank.name}</strong>
@@ -32,9 +33,8 @@ export default function ProfilePanel({ person, isSelf }) {
       </div>
 
       <div className="stat-tiles">
-        {STAT_TILES.map(({ key, label, emoji }) => (
+        {STAT_TILES.map(({ key, label }) => (
           <div className="stat-tile" key={key}>
-            <span>{emoji}</span>
             <b>{person.stats[key]}</b>
             <small>{label}</small>
           </div>
@@ -44,11 +44,11 @@ export default function ProfilePanel({ person, isSelf }) {
       <blockquote className="potion-bio">{bio ?? '…the cauldron is brewing a bio…'}</blockquote>
       <p className="background">{person.background}</p>
 
-      <div className="tags">{badgesFor(person.stats).map((badge) => <span key={badge.id}>{badge.emoji} {badge.label}</span>)}</div>
+      <div className="tags">{badgesFor(person.stats).map((badge) => <span key={badge.id}>{badge.label}</span>)}</div>
 
       {!isSelf && (
         <MagicButton onClick={() => notify({ emoji: '🦉', title: 'Owl post sent', body: `${person.name} will be asked to help with your next sighting.` })}>
-          🦉 Ask {person.name.split(' ')[0]} for help
+          <Icon name="send" /> Ask {person.name.split(' ')[0]} for help
         </MagicButton>
       )}
     </div>

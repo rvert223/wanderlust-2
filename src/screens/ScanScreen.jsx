@@ -61,10 +61,10 @@ export default function ScanScreen() {
   if (!draft) {
     return (
       <>
-        <ScreenHeader title="Scan" subtitle="The mirror reads what your camera saw." />
+        <ScreenHeader title="Scan" />
         <GlassCard className="empty-card">
           <p>Nothing to scan yet. Wave your wand at something wondrous first.</p>
-          <MagicButton onClick={() => navigate('capture')}>🪄 Open the camera</MagicButton>
+          <MagicButton onClick={() => navigate('capture')}>Open the camera</MagicButton>
         </GlassCard>
       </>
     );
@@ -72,7 +72,7 @@ export default function ScanScreen() {
 
   return (
     <>
-      <ScreenHeader title="Scan" subtitle="The mirror reads what your camera saw." />
+      <ScreenHeader title="Scan" />
       {draft.result ? (
         <ScanResultCard photo={draft} result={draft.result} posting={posting} onPost={post} onRescan={() => { setDraft(null); navigate('capture'); }} />
       ) : (

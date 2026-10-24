@@ -1,8 +1,8 @@
 // Status pill for a sighting's community verification.
 const LABELS = {
-  verified: '✔ Community verified',
-  pending: '⏳ Awaiting verifiers',
-  disputed: '⚠ Disputed',
+  verified: 'Community verified',
+  pending: 'Awaiting verifiers',
+  disputed: 'Disputed',
 };
 
 export default function VerificationBadge({ verification }) {

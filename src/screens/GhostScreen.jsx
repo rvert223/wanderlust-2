@@ -3,6 +3,7 @@
 // Also: voice questions via Muse Voice Transcribe, and nearby haunted places.
 import { useEffect, useRef, useState } from 'react';
 import GlassCard from '../components/GlassCard';
+import Icon from '../components/Icon';
 import MagicButton from '../components/MagicButton';
 import ScreenHeader from '../components/ScreenHeader';
 import SightingCard from '../components/SightingCard';
@@ -76,30 +77,29 @@ export default function GhostScreen() {
 
   return (
     <>
-      <ScreenHeader title="Haunts" subtitle={`Listening for the Fear Frequency (${INFRASOUND.targetHz} Hz)`} />
+      <ScreenHeader title="Haunts" subtitle={`Fear frequency · ${INFRASOUND.targetHz} Hz`} />
 
       <GlassCard className={`ghost-panel ${spiking ? 'haunted' : ''}`}>
         <SpectrumGauge analysis={frame} />
         <div className="fear-track">
           <div className="fear-fill" style={{ width: `${fear}%` }} />
-          <span className="fear-ghost" style={{ left: `${fear}%` }}>👻</span>
+          <span className="fear-ghost" style={{ left: `${fear}%` }}><Icon name="ghost" /></span>
         </div>
         <p className="fear-readout">
           {listening ? `+${(frame?.deltaDb ?? 0).toFixed(1)} dB above the noise floor` : 'Silent. The veil is closed.'}
         </p>
         {listening && !micAvailable && <p className="note">No microphone found — use the test tone to try the detector.</p>}
         <div className="actions wrap">
-          {listening ? <MagicButton variant="ghost" onClick={stop}>■ Stop</MagicButton> : <MagicButton onClick={start}>🕯️ Listen</MagicButton>}
-          <MagicButton variant="ghost" onClick={injectTone} disabled={!listening}>🔔 Test tone</MagicButton>
-          <MagicButton variant="ghost" onClick={ask} disabled={asking}>{asking ? 'Listening…' : '🎙️ Ask'}</MagicButton>
-          <MagicButton variant="ghost" onClick={markHaunted} disabled={!lastSpike}>👻 Mark haunted</MagicButton>
+          {listening ? <MagicButton variant="ghost" onClick={stop}><Icon name="stop" /> Stop</MagicButton> : <MagicButton onClick={start}><Icon name="audio" /> Listen</MagicButton>}
+          <MagicButton variant="ghost" onClick={injectTone} disabled={!listening}><Icon name="bell" /> Test tone</MagicButton>
+          <MagicButton variant="ghost" onClick={ask} disabled={asking}><Icon name="mic" /> {asking ? 'Listening…' : 'Ask'}</MagicButton>
+          <MagicButton variant="ghost" onClick={markHaunted} disabled={!lastSpike}><Icon name="ghost" /> Mark haunted</MagicButton>
         </div>
-        <p className="note">Many phone microphones filter out sound below 20 Hz, so the test tone feeds the same detector for demos.</p>
       </GlassCard>
 
       <h3 className="section-title">The Investigator&rsquo;s log</h3>
       {log.map(({ id, who, text }) => (
-        <p key={id} className={`log-line ${who}`}><b>{who === 'you' ? '🎙️ You' : '🕯️ Investigator'}</b> {text}</p>
+        <p key={id} className={`log-line ${who}`}><b>{who === 'you' ? 'You' : 'Investigator'}</b> {text}</p>
       ))}
 
       <h3 className="section-title">Haunted places nearby</h3>

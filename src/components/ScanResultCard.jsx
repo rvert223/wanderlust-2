@@ -16,7 +16,7 @@ export default function ScanResultCard({ photo, result, posting, onPost, onResca
         <img src={photo.dataUrl} alt="Your live capture" />
         <div className="plate-tags">
           <span className={`plate-tag ${result.authentic ? '' : 'warn'}`}>
-            {result.authentic ? '✔ Live-verified capture' : '⚠ Unverified capture'}
+            <Icon name={result.authentic ? 'check' : 'alert'} /> {result.authentic ? 'Live-verified capture' : 'Unverified capture'}
           </span>
           {CATEGORIES[result.category] && <span className="plate-tag family">Family: {CATEGORIES[result.category].label}</span>}
         </div>
@@ -25,7 +25,7 @@ export default function ScanResultCard({ photo, result, posting, onPost, onResca
       <div className="scan-body">
         <div className="title-row">
           <h2>{result.name}</h2>
-          <span className="taxa-tag">{result.emoji} {HAZARD_LEVELS[result.hazard]}</span>
+          <span className="taxa-tag">{HAZARD_LEVELS[result.hazard]}</span>
         </div>
         <p className="latin">{result.scientificName}</p>
 
@@ -57,7 +57,7 @@ export default function ScanResultCard({ photo, result, posting, onPost, onResca
         )}
 
         <button className="muse-bubble" onClick={() => speak(result.narration)} title="Tap to hear the Investigator">
-          {result.narration} <small>🔊 tap to listen</small>
+          {result.narration} <small><Icon name="volume" /> Tap to listen</small>
         </button>
 
         {result.lookalikes.length > 0 && (

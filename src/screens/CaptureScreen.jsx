@@ -29,7 +29,7 @@ export default function CaptureScreen() {
 
   return (
     <>
-      <ScreenHeader title="Capture" subtitle="Only live magic is trusted — no uploads, no fakes." />
+      <ScreenHeader title="Capture" />
       <LiveCamera videoRef={videoRef} status={status} placeName={location.placeName} />
       <div className="capture-controls">
         <button className="side-btn" onClick={() => navigate('ghost')}>
@@ -42,7 +42,6 @@ export default function CaptureScreen() {
           <small>Journal</small>
         </button>
       </div>
-      <p className="map-caption">Time, GPS &amp; a fingerprint are sealed into every photo</p>
       {flashing && <div className="flash" />}
     </>
   );

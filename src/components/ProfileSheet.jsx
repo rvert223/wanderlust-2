@@ -2,6 +2,7 @@
 import { useAsync } from '../hooks/useAsync';
 import { getProfile } from '../services/profileService';
 import { useApp } from '../state/AppContext';
+import Icon from './Icon';
 import ProfilePanel from './ProfilePanel';
 
 export default function ProfileSheet() {
@@ -15,7 +16,7 @@ export default function ProfileSheet() {
   return (
     <div className="sheet-backdrop" onClick={() => openProfile(null)}>
       <aside className="sheet glass" onClick={(event) => event.stopPropagation()} role="dialog" aria-label="Profile">
-        <button className="sheet-close" onClick={() => openProfile(null)} aria-label="Close">✕</button>
+        <button className="sheet-close" onClick={() => openProfile(null)} aria-label="Close"><Icon name="x" /></button>
         {person ? <ProfilePanel person={person} isSelf={isSelf} /> : <p className="empty">Unrolling the scroll…</p>}
       </aside>
     </div>

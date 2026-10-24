@@ -1,11 +1,12 @@
-// One sighting as a field-guide card: photo (or specimen emoji) with category and distance labels
+// One sighting as a field-guide card: photo (or category icon) with category and distance labels
 // over it, then title, place, hazard notice, verification status and a tappable reporter.
 // `expanded` also reveals the description.
 import { HAZARD_LEVELS } from '../config/app';
-import { CATEGORIES, sightingEmoji } from '../config/categories';
+import { CATEGORIES } from '../config/categories';
 import { useApp } from '../state/AppContext';
 import { formatDistance } from '../utils/geo';
 import { timeAgo } from '../utils/format';
+import CategoryIcon from './CategoryIcon';
 import GlassCard from './GlassCard';
 import Icon from './Icon';
 import PotionMeter from './PotionMeter';
@@ -18,7 +19,7 @@ export default function SightingCard({ sighting, expanded = false, onSelect }) {
   return (
     <GlassCard tilt className={`sighting ${expanded ? 'expanded' : ''}`} style={{ '--accent-color': category.color }} onClick={() => onSelect?.(sighting.id)}>
       <div className="sighting-art">
-        {sighting.photo ? <img src={sighting.photo} alt={sighting.title} /> : <span className="sighting-emoji">{sightingEmoji(sighting)}</span>}
+        {sighting.photo ? <img src={sighting.photo} alt={sighting.title} /> : <span className="sighting-placeholder"><CategoryIcon category={sighting.category} /></span>}
         <span className="photo-pill sighting-cat">{category.label}</span>
         <span className="photo-pill sighting-when">
           <Icon name="arrow" /> {sighting.distanceKm != null && `${formatDistance(sighting.distanceKm)} away · `}{timeAgo(sighting.createdAt)}
@@ -46,7 +47,7 @@ export default function SightingCard({ sighting, expanded = false, onSelect }) {
               openProfile(sighting.reporter.id);
             }}
           >
-            {sighting.reporter.emoji} {sighting.reporter.name}
+            {sighting.reporter.name}
           </button>
         </div>
       </div>

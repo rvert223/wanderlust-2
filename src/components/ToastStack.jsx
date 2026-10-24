@@ -2,6 +2,7 @@
 // dismisses it, and jumps to the sighting on the map if it carries a `sightingId`.
 import { useApp } from '../state/AppContext';
 import GlassCard from './GlassCard';
+import Icon from './Icon';
 
 export default function ToastStack() {
   const { toasts, dismissToast, setSelectedId, navigate } = useApp();
@@ -17,7 +18,7 @@ export default function ToastStack() {
     <div className="toast-stack" aria-live="polite">
       {toasts.map((toast) => (
         <GlassCard key={toast.id} className={`toast ${toast.tone || ''}`} onClick={() => open(toast)}>
-          <span className="toast-emoji">{toast.emoji}</span>
+          <span className="toast-icon"><Icon name={toast.tone === 'danger' ? 'alert' : 'bell'} /></span>
           <div>
             <strong>{toast.title}</strong>
             <p>{toast.body}</p>

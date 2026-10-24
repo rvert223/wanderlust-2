@@ -1,7 +1,7 @@
 // Dependency-free field map: a topographic sheet centred on the user. Sightings are projected by
 // real distance/bearing, pulsing red when hazardous; dashed halos mark geographic patterns.
 import { ALERT_HAZARD } from '../config/app';
-import { CATEGORIES, sightingEmoji } from '../config/categories';
+import { CATEGORIES } from '../config/categories';
 import { formatDistance, projectToUnit } from '../utils/geo';
 
 const PLOT_RADIUS = 64; // viewBox units available for plotting (the sheet is 200 × 150)
@@ -50,8 +50,8 @@ export default function EnchantedMap({ center, sightings, patterns, radiusKm, se
             onKeyDown={(event) => event.key === 'Enter' && onSelect(sighting.id)}
           >
             <circle r="8" className="pin-ring" style={{ '--c': CATEGORIES[sighting.category].color }} />
-            <circle r="6" className="pin-core" style={{ '--c': CATEGORIES[sighting.category].color }} />
-            <text className="pin-emoji" dy=".35em">{sightingEmoji(sighting)}</text>
+            <circle r="4.5" className="pin-core" style={{ '--c': CATEGORIES[sighting.category].color }} />
+            <circle r="2" className="pin-dot" style={{ '--c': CATEGORIES[sighting.category].color }} />
           </g>
         );
       })}

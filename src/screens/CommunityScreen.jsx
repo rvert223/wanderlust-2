@@ -1,11 +1,13 @@
 // Circle: anonymous community feed. Top — recent posts grouped by place (e.g. "Barton Springs
 // Pool Posts"), nearest place first, with each place's distance from the user. No names shown.
 // Bottom — the Verification Council, where the user votes on pending sightings.
+import CategoryIcon from '../components/CategoryIcon';
 import GlassCard from '../components/GlassCard';
+import Icon from '../components/Icon';
 import MagicButton from '../components/MagicButton';
 import ScreenHeader from '../components/ScreenHeader';
 import VerificationBadge from '../components/VerificationBadge';
-import { CATEGORIES, sightingEmoji } from '../config/categories';
+import { CATEGORIES } from '../config/categories';
 import { nearbySightings } from '../services/sightingsService';
 import { useApp } from '../state/AppContext';
 import { timeAgo } from '../utils/format';
@@ -29,16 +31,16 @@ function groupByPlace(sightings) {
 }
 
 function PlaceGroup({ group, onOpen }) {
-  const { label, emoji } = CATEGORIES[group.category];
+  const { label } = CATEGORIES[group.category];
   return (
     <GlassCard className="place-group">
       <header className="group-head">
         <h3>{group.place} Posts</h3>
-        <small>{emoji} {label} · 📍 {formatDistance(group.distanceKm)} from you</small>
+        <small>{label} · {formatDistance(group.distanceKm)} from you</small>
       </header>
       {group.posts.map((post) => (
         <button key={post.id} className="post" onClick={() => onOpen(post.id)}>
-          <span className="post-art">{post.photo ? <img src={post.photo} alt="" /> : sightingEmoji(post)}</span>
+          <span className="post-art">{post.photo ? <img src={post.photo} alt="" /> : <CategoryIcon category={post.category} />}</span>
           <span className="post-body">
             <b>{post.title}</b>
             <small>{timeAgo(post.createdAt)}</small>
@@ -57,10 +59,10 @@ function VerifyCard({ sighting, user, onVote }) {
   return (
     <GlassCard className="verify-card">
       <div className="verify-head">
-        <span className="verify-emoji">{sighting.emoji || CATEGORIES[sighting.category].emoji}</span>
+        <span className="verify-emoji">{sighting.photo ? <img src={sighting.photo} alt="" /> : <CategoryIcon category={sighting.category} />}</span>
         <div>
           <h4>{sighting.title}</h4>
-          <small>📍 {sighting.place} · {verification.votes.length} vote{verification.votes.length === 1 ? '' : 's'}</small>
+          <small>{sighting.place} · {verification.votes.length} vote{verification.votes.length === 1 ? '' : 's'}</small>
         </div>
       </div>
       <div className="confidence"><span style={{ width: `${verification.aiScore * 100}%` }} /><em>AI check {Math.round(verification.aiScore * 100)}%</em></div>
@@ -68,8 +70,8 @@ function VerifyCard({ sighting, user, onVote }) {
         <p className="note">{mine ? 'Your own sighting — the council decides.' : 'Your vote is cast. Thank you, helper!'}</p>
       ) : (
         <div className="actions">
-          <MagicButton onClick={() => onVote(sighting.id, true)}>✔ Looks real</MagicButton>
-          <MagicButton variant="ghost" onClick={() => onVote(sighting.id, false)}>✖ Doubtful</MagicButton>
+          <MagicButton onClick={() => onVote(sighting.id, true)}><Icon name="check" /> Looks real</MagicButton>
+          <MagicButton variant="ghost" onClick={() => onVote(sighting.id, false)}><Icon name="x" /> Doubtful</MagicButton>
         </div>
       )}
     </GlassCard>
@@ -83,7 +85,7 @@ export default function CommunityScreen() {
 
   return (
     <>
-      <ScreenHeader title="The Circle" subtitle="Fresh sightings, grouped by the places closest to you." />
+      <ScreenHeader title="The Circle" />
 
       {groups.length === 0 && <p className="empty">No posts yet. Be the first to wave your wand.</p>}
       {groups.map((group) => (

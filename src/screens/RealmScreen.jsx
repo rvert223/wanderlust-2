@@ -1,6 +1,7 @@
 // Realm (home): the magic mirror, filters, the enchanted map, geographic "pattern whispers"
 // and the nearby sightings feed. Everything on this screen reacts to the same filtered list.
 import { useMemo, useState } from 'react';
+import CategoryIcon from '../components/CategoryIcon';
 import Chip from '../components/Chip';
 import EnchantedMap from '../components/EnchantedMap';
 import GlassCard from '../components/GlassCard';
@@ -35,8 +36,8 @@ export default function RealmScreen() {
 
       <div className="chips">
         <Chip active={!category} onClick={() => setCategory(null)}>All ({visible.length})</Chip>
-        {Object.entries(CATEGORIES).map(([id, { label, emoji, color }]) => (
-          <Chip key={id} active={category === id} color={color} onClick={() => setCategory(category === id ? null : id)}>{emoji} {label}</Chip>
+        {Object.entries(CATEGORIES).map(([id, { label, color }]) => (
+          <Chip key={id} active={category === id} color={color} onClick={() => setCategory(category === id ? null : id)}><CategoryIcon category={id} /> {label}</Chip>
         ))}
       </div>
       <div className="chips">
