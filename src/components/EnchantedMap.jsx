@@ -27,8 +27,13 @@ export default function EnchantedMap({ center, sightings, patterns, radiusKm, se
           <text y={-PLOT_RADIUS * fraction + 4} className="map-ring-label">{formatDistance(radiusKm * fraction)}</text>
         </g>
       ))}
-      <text x="92" y="-64" className="map-compass">N</text>
-      <path d="M92 -62v10" className="map-axis" />
+      <g className="compass-rose" transform="translate(84 -56)">
+        <circle r="11" className="rose-ring dash" />
+        <circle r="8" className="rose-ring" />
+        <path d="M0-12 2-2 0 0-2-2ZM0 12 2 2 0 0-2 2ZM-12 0-2-2 0 0-2 2ZM12 0 2-2 0 0 2 2Z" className="rose-long" />
+        <path d="M6-6 1-1 0 0 1 1ZM-6 6-1 1 0 0-1-1ZM-6-6-1-1 0 0 1-1ZM6 6 1 1 0 0-1 1Z" className="rose-short" />
+        <text y="-14">N</text>
+      </g>
 
       {patterns.map((pattern) => {
         const { x, y } = place(pattern.center);

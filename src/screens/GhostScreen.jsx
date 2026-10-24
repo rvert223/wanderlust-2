@@ -23,7 +23,7 @@ const VOICE_CLIP_MS = 4000;
 
 export default function GhostScreen() {
   const { sightings, location, notify, postSighting, setSelectedId, navigate } = useApp();
-  const { frame, listening, micAvailable, start, stop, injectTone } = useInfrasound();
+  const { frame, listening, micAvailable, start, stop } = useInfrasound();
   const [log, setLog] = useState([{ id: 0, who: 'investigator', text: 'Light a candle and press Listen. I will tell you when the veil grows thin.' }]);
   const [lastSpike, setLastSpike] = useState(null);
   const [asking, setAsking] = useState(false);
@@ -88,10 +88,9 @@ export default function GhostScreen() {
         <p className="fear-readout">
           {listening ? `+${(frame?.deltaDb ?? 0).toFixed(1)} dB above the noise floor` : 'Silent. The veil is closed.'}
         </p>
-        {listening && !micAvailable && <p className="note">No microphone found — use the test tone to try the detector.</p>}
+        {listening && !micAvailable && <p className="note">No microphone found.</p>}
         <div className="actions wrap">
           {listening ? <MagicButton variant="ghost" onClick={stop}><Icon name="stop" /> Stop</MagicButton> : <MagicButton onClick={start}><Icon name="audio" /> Listen</MagicButton>}
-          <MagicButton variant="ghost" onClick={injectTone} disabled={!listening}><Icon name="bell" /> Test tone</MagicButton>
           <MagicButton variant="ghost" onClick={ask} disabled={asking}><Icon name="mic" /> {asking ? 'Listening…' : 'Ask'}</MagicButton>
           <MagicButton variant="ghost" onClick={markHaunted} disabled={!lastSpike}><Icon name="ghost" /> Mark haunted</MagicButton>
         </div>

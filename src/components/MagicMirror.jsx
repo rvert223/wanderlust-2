@@ -1,9 +1,7 @@
-// The Realm's header: title and sighting count, then the "ask the mirror" search that
-// reflects back the nearest matching sighting as a "vision".
-import { formatDistance } from '../utils/geo';
+// The Realm's header: title and sighting count, then the "ask the mirror" search.
 import Icon from './Icon';
 
-export default function MagicMirror({ query, onQuery, vision, onOpen, count }) {
+export default function MagicMirror({ query, onQuery, count }) {
   return (
     <section className="mirror">
       <header className="mirror-head">
@@ -20,14 +18,6 @@ export default function MagicMirror({ query, onQuery, vision, onOpen, count }) {
           aria-label="Ask the mirror"
         />
       </label>
-      {/* `key` replays the reveal animation whenever the reflected vision changes */}
-      <button className="mirror-vision" key={vision?.id ?? 'none'} disabled={!vision} onClick={() => onOpen(vision)}>
-        {vision ? (
-          <>I see <b>{vision.title}</b> · {formatDistance(vision.distanceKm)} away</>
-        ) : (
-          'The mirror clouds… nothing matches.'
-        )}
-      </button>
     </section>
   );
 }

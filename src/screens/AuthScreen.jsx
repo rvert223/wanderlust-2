@@ -1,5 +1,6 @@
-// Welcome: log in or sign up. The arched mirror, the app name and the tagline sit above a small
-// form; switching between "Log in" and "Sign up" only adds the name field.
+// Welcome: log in or sign up. A tarot-style card (corner letters, bat marks, gold swirls) holds the
+// arched mirror, the app name and the tagline; below it sits the form. Switching between "Log in"
+// and "Sign up" only adds the name field.
 import { useState } from 'react';
 import MirrorScene from '../components/MirrorScene';
 import ThemeToggle from '../components/ThemeToggle';
@@ -52,7 +53,11 @@ export default function AuthScreen() {
     <div className="auth">
       <div className="auth-theme"><ThemeToggle /></div>
 
-      <header className="auth-hero">
+      <header className="auth-hero tarot">
+        <span className="tarot-corner tl" aria-hidden="true"><b>W</b><i /></span>
+        <span className="tarot-corner br" aria-hidden="true"><b>W</b><i /></span>
+        <svg className="tarot-swirl tr" viewBox="0 0 74 74" aria-hidden="true"><path d="M72 6C46 8 26 22 18 44c-4 12 6 20 14 14 6-5 2-14-5-12" /><path d="M72 14C54 18 42 28 36 40" /></svg>
+        <svg className="tarot-swirl bl" viewBox="0 0 74 74" aria-hidden="true"><path d="M72 6C46 8 26 22 18 44c-4 12 6 20 14 14 6-5 2-14-5-12" /><path d="M72 14C54 18 42 28 36 40" /></svg>
         <MirrorScene />
         <h1 className="auth-title">Wanderlust</h1>
         <p className="auth-tagline">

@@ -5,6 +5,8 @@ const CONTOURS = [128, 146, 164, 182, 200, 218].map(
 );
 const STARS = [[46, 64], [78, 38], [196, 56], [120, 30], [150, 92], [32, 104], [212, 110]];
 const ARCH = 'M0 300V120A120 120 0 0 1 240 120V300Z';
+const SPARKLES = [[-2, 40, 7], [244, 70, 5], [232, 8, 4], [10, 0, 4]];
+const sparklePath = (x, y, r) => `M${x} ${y - r}Q${x} ${y} ${x + r} ${y}Q${x} ${y} ${x} ${y + r}Q${x} ${y} ${x - r} ${y}Q${x} ${y} ${x} ${y - r}Z`;
 
 export default function MirrorScene() {
   return (
@@ -37,6 +39,7 @@ export default function MirrorScene() {
       <path d={ARCH} className="scene-frame" />
       <path d="M-6 300V120A126 126 0 0 1 246 120V300" className="scene-frame thin" />
       <path d="M-8 300H248" className="scene-frame" />
+      {SPARKLES.map(([x, y, r], i) => <path key={i} d={sparklePath(x, y, r)} className="scene-sparkle" style={{ '--i': i }} />)}
     </svg>
   );
 }

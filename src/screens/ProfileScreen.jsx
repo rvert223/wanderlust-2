@@ -13,7 +13,7 @@ export default function ProfileScreen() {
   return (
     <>
       <ScreenHeader title="Profile" />
-      <GlassCard><ProfilePanel person={user} isSelf /></GlassCard>
+      <GlassCard className="profile-card"><ProfilePanel person={user} isSelf /></GlassCard>
 
       <h3 className="section-title">My sightings</h3>
       {mine.length === 0 && <p className="empty">Nothing yet.</p>}

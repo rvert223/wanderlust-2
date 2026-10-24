@@ -32,7 +32,7 @@ export default function RealmScreen() {
 
   return (
     <>
-      <MagicMirror query={query} onQuery={setQuery} vision={visible[0]} onOpen={(s) => setSelectedId(s.id)} count={visible.length} />
+      <MagicMirror query={query} onQuery={setQuery} count={visible.length} />
 
       <div className="chips">
         <Chip active={!category} onClick={() => setCategory(null)}>All ({visible.length})</Chip>
