@@ -1,5 +1,6 @@
-// App shell: picks the active screen and mounts the always-present layers
-// (sparkles, top bar, bottom navigation, toasts and the profile sheet).
+// App shell: shows the welcome (log in / sign up) screen until there is a session, then picks the
+// active screen and mounts the always-present layers (sparkles, top bar, bottom navigation,
+// toasts and the profile sheet).
 import BottomNav from './components/BottomNav';
 import ProfileSheet from './components/ProfileSheet';
 import SparkleCanvas from './components/SparkleCanvas';
@@ -9,6 +10,7 @@ import CaptureScreen from './screens/CaptureScreen';
 import CommunityScreen from './screens/CommunityScreen';
 import GhostScreen from './screens/GhostScreen';
 import ProfileScreen from './screens/ProfileScreen';
+import AuthScreen from './screens/AuthScreen';
 import RealmScreen from './screens/RealmScreen';
 import ScanScreen from './screens/ScanScreen';
 import { useApp } from './state/AppContext';
@@ -23,7 +25,10 @@ const SCREENS = {
 };
 
 export default function App() {
-  const { route } = useApp();
+  const { route, session } = useApp();
+  if (!session) {
+    return <AuthScreen />;
+  }
   const Screen = SCREENS[route];
   return (
     <div className="app">

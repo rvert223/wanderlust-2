@@ -1,5 +1,56 @@
-/* Screen-specific styles: Capture, Scan, Haunts, Circle. (Realm and Profile reuse components.css.)
+/* Screen-specific styles: Welcome, Capture, Scan, Haunts, Community. (Realm and Profile reuse components.css.)
    Colors come from the tokens in theme.css. Surfaces drawn over the camera/photo stay dark in both modes. */
+
+/* ---- Welcome (log in / sign up) ---- */
+.auth {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  max-width: 440px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: max(28px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+}
+.auth-theme { position: absolute; top: max(14px, env(safe-area-inset-top)); right: max(16px, env(safe-area-inset-right)); }
+.auth-hero { display: flex; flex-direction: column; align-items: center; text-align: center; padding-top: 12px; }
+.mirror-scene { width: min(230px, 58vw); max-width: 100%; height: auto; overflow: visible; animation: reveal 0.9s ease-out both; }
+.scene-sky-top { stop-color: var(--scene-sky-top); }
+.scene-sky-bottom { stop-color: var(--scene-sky-bottom); }
+.scene-orb { fill: var(--scene-orb); opacity: 0.9; }
+.scene-star { fill: var(--scene-star); animation: blink 3.2s calc(var(--i) * 0.45s) ease-in-out infinite; }
+.scene-contours { animation: drift 18s linear infinite alternate; }
+.scene-contour { fill: none; stroke: var(--scene-contour); stroke-width: 0.8; }
+.scene-ridge-far { fill: var(--scene-ridge-far); }
+.scene-ridge-near { fill: var(--scene-ridge-near); }
+.scene-trail { fill: none; stroke: var(--scene-trail); stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 0.1 5; animation: walk 6s linear infinite; }
+.scene-pin { fill: var(--scene-trail); }
+.scene-pin-dot { fill: var(--scene-sky-top); }
+.scene-pin-pulse { fill: var(--scene-trail); opacity: 0.35; transform-box: fill-box; transform-origin: center; animation: pinPulse 2.6s ease-out infinite; }
+.scene-frame { fill: none; stroke: var(--scene-frame); stroke-width: 1.2; }
+.scene-frame.thin { stroke-width: 0.6; }
+.auth-title { margin-top: 14px; font: 500 3.4rem/1 var(--font-display); letter-spacing: -0.01em; text-wrap: balance; animation: reveal 0.8s 0.25s ease-out both; }
+.auth-tagline { margin-top: 12px; font: italic 400 1.28rem/1.35 var(--font-display); color: var(--soft); }
+.auth-line { display: block; }
+.auth-tagline span span { display: inline-block; margin-right: 0.22em; animation: rise 0.6s calc(0.6s + var(--i) * 0.07s) ease-out both; }
+.auth-card { display: flex; flex-direction: column; gap: 14px; width: 100%; padding: 18px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); animation: rise 0.6s 0.4s ease-out both; }
+.auth-tabs { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--seg-bg); border: 1px solid var(--border); }
+.auth-tabs button { flex: 1; padding: 9px 6px; border: 0; border-radius: 999px; cursor: pointer; font: var(--label-weight) 0.82rem var(--font-label); color: var(--text); background: transparent; transition: background 0.2s, color 0.2s; }
+.auth-tabs button.active { font-weight: 700; color: var(--on-seg-active); background: var(--seg-active); }
+.auth-field { display: flex; flex-direction: column; gap: 6px; }
+.auth-field span { font: 600 0.62rem var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+.auth-field input { width: 100%; padding: 12px 14px; border-radius: 8px; font: 400 1rem var(--font-body); color: var(--text); border: 1px solid var(--border-strong); background: var(--bg); outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+.auth-field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+.auth-error { padding: 10px 12px; border-radius: 8px; font-size: 0.85rem; color: var(--danger); background: var(--danger-bg); border: 1px solid var(--danger-border); }
+.auth-submit { width: 100%; padding: 14px 18px; border-radius: 8px; font-size: 0.95rem; }
+.auth-switch { text-align: center; font-size: 0.85rem; color: var(--text-muted); }
+.auth-switch button { padding: 0; border: 0; cursor: pointer; background: none; font: 600 0.85rem var(--font-body); color: var(--text); text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 3px; }
+.auth-note { margin-top: auto; font-size: 0.58rem; font-weight: 600; color: var(--text-muted); text-align: center; }
+.auth button:focus-visible, .auth-field input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@keyframes drift { from { transform: translateX(-30px); } to { transform: translateX(10px); } }
+@keyframes walk { to { stroke-dashoffset: -30; } }
 
 /* ---- Capture ---- */
 .camera { position: relative; aspect-ratio: 3 / 4; max-width: 100%; overflow: hidden; border-radius: 22px; background: radial-gradient(ellipse at 50% 45%, #1d3330, #0b1417 70%); }
@@ -115,7 +166,14 @@
 .log-line.investigator b { color: var(--soft); }
 .log-line.you b { color: var(--secondary); }
 
-/* ---- Circle ---- */
+/* ---- Community ---- */
+.place-picker { position: relative; display: flex; align-items: center; }
+.place-picker .icon { position: absolute; pointer-events: none; color: var(--text-muted); }
+.place-picker .icon:first-child { left: 14px; }
+.place-picker .icon:last-child { right: 14px; }
+.place-picker select { width: 100%; padding: 12px 40px; appearance: none; border-radius: 999px; cursor: pointer; font: var(--label-weight) 0.8rem var(--font-label); color: var(--text); border: 1px solid var(--border-strong); background: var(--surface); outline: none; }
+.place-picker select:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+.sign-out { align-self: center; margin-top: 12px; min-width: 160px; }
 .place-group { display: flex; flex-direction: column; gap: 8px; }
 .group-head h3 { font: 500 1.4rem/1.15 var(--font-display); }
 .group-head small { display: block; margin-top: 4px; font: 600 0.62rem var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }

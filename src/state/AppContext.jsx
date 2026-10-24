@@ -6,6 +6,7 @@ import { placeAt } from '../connectors/facebookGraph';
 import { getCurrentPosition } from '../connectors/location';
 import { narrate } from '../connectors/muse';
 import { subscribeToAlerts } from '../services/alertService';
+import * as auth from '../services/authService';
 import { loadUser, rankFor, saveUser } from '../services/profileService';
 import { createSighting, listSightings, voteOnSighting } from '../services/sightingsService';
 import { distanceKm } from '../utils/geo';
@@ -26,6 +27,7 @@ export function AppProvider({ children }) {
   const [selectedId, setSelectedId] = useState(null); // sighting highlighted on the Realm map
   const [profileId, setProfileId] = useState(null); // person shown in the profile sheet
   const [toasts, setToasts] = useState([]);
+  const [session, setSession] = useState(auth.loadSession); // signed-in account, or null
 
   // ---- UI actions -------------------------------------------------------
   const navigate = (next) => {
@@ -38,6 +40,19 @@ export function AppProvider({ children }) {
     const id = `${Date.now()}-${Math.random()}`;
     setToasts((current) => [...current, { id, emoji: '✨', ...toast }]);
     setTimeout(() => dismissToast(id), TOAST_MS);
+  };
+
+  // ---- Account actions --------------------------------------------------
+  const startSession = (next) => {
+    setSession(next);
+    setUser((current) => ({ ...current, name: next.user.name, email: next.user.email }));
+    setRoute('realm');
+  };
+  const signUp = async (fields) => startSession(await auth.signUp(fields));
+  const logIn = async (fields) => startSession(await auth.logIn(fields));
+  const signOut = () => {
+    auth.signOut();
+    setSession(null);
   };
 
   // ---- Domain actions ---------------------------------------------------
@@ -102,6 +117,7 @@ export function AppProvider({ children }) {
   const value = {
     route, navigate, location, sightings, user, draft, setDraft, selectedId, setSelectedId,
     profileId, openProfile: setProfileId, toasts, notify, dismissToast, updateUser, bumpStat, postSighting, vote,
+    session, signUp, logIn, signOut,
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

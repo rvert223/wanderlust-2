@@ -1,19 +1,20 @@
-// Community: anonymous feed. Top — recent posts grouped by place (e.g. "Barton Springs
-// Pool Posts"), nearest place first, with each place's distance from the user. No names shown.
+// Community: anonymous feed. Top — every post, grouped by place (e.g. "Barton Springs Pool
+// Posts"), nearest place first, with each place's distance from the user. A location picker
+// narrows the feed to one place. No names shown.
 // Bottom — a collapsed "Needs verification" dropdown where the user votes on pending sightings.
 import CategoryIcon from '../components/CategoryIcon';
 import GlassCard from '../components/GlassCard';
 import Icon from '../components/Icon';
 import MagicButton from '../components/MagicButton';
 import ScreenHeader from '../components/ScreenHeader';
-import VerificationBadge from '../components/VerificationBadge';
 import { CATEGORIES } from '../config/categories';
 import { nearbySightings } from '../services/sightingsService';
+import { useState } from 'react';
 import { useApp } from '../state/AppContext';
 import { timeAgo } from '../utils/format';
 import { formatDistance } from '../utils/geo';
 
-const MAX_GROUPS = 6;
+const NEAR_ME = '';
 
 /** Groups sightings by place: newest post first inside a group, nearest group first overall. */
 function groupByPlace(sightings) {
@@ -26,8 +27,7 @@ function groupByPlace(sightings) {
       distanceKm: Math.min(...posts.map((p) => p.distanceKm)),
       posts: posts.sort((a, b) => b.createdAt - a.createdAt),
     }))
-    .sort((a, b) => a.distanceKm - b.distanceKm)
-    .slice(0, MAX_GROUPS);
+    .sort((a, b) => a.distanceKm - b.distanceKm);
 }
 
 function PlaceGroup({ group, onOpen }) {
@@ -44,7 +44,6 @@ function PlaceGroup({ group, onOpen }) {
           <span className="post-body">
             <b>{post.title}</b>
             <small>{timeAgo(post.createdAt)}</small>
-            <VerificationBadge verification={post.verification} />
           </span>
         </button>
       ))}
@@ -81,11 +80,24 @@ function VerifyCard({ sighting, user, onVote }) {
 export default function CommunityScreen() {
   const { location, sightings, user, vote, setSelectedId, navigate } = useApp();
   const pending = sightings.filter((s) => s.verification.status === 'pending');
-  const groups = groupByPlace(nearbySightings(sightings, location.coords, Infinity));
+  const [place, setPlace] = useState(NEAR_ME);
+  const allGroups = groupByPlace(nearbySightings(sightings, location.coords, Infinity));
+  const groups = place === NEAR_ME ? allGroups : allGroups.filter((group) => group.place === place);
 
   return (
     <>
       <ScreenHeader title="Community" />
+
+      <label className="place-picker" htmlFor="community-place">
+        <Icon name="target" />
+        <select id="community-place" value={place} onChange={(event) => setPlace(event.target.value)} aria-label="Show posts from">
+          <option value={NEAR_ME}>Near me · {location.placeName}</option>
+          {allGroups.map((group) => (
+            <option key={group.place} value={group.place}>{group.place} · {formatDistance(group.distanceKm)}</option>
+          ))}
+        </select>
+        <Icon name="chevron" />
+      </label>
 
       {groups.length === 0 && <p className="empty">No posts yet. Be the first to wave your wand.</p>}
       {groups.map((group) => (
