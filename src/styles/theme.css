@@ -1,19 +1,19 @@
 /* Theme: color tokens for the DARK ("Field Archive") and LIGHT ("Botanical Field Guide") modes,
    base elements, app shell and shared keyframes.
    Switch modes by setting <html data-theme="dark|light"> (see hooks/useTheme.js).
-   Token roles: accent = primary sage · secondary = lavender · soft = muted sage text ·
-   highlight = tan/tertiary · fill/track = subtle surfaces · glass-* = the flat card surface. */
+   Token roles: accent = primary sage · secondary = lavender · seg-/chip- = segmented control and
+   filter pills · pill- = labels floating over photos · map- = the topographic map. */
 
-/* ---- Dark mode (default): neutral #101B20 · primary #527A68 · secondary #8171A6 · tertiary #D8DCD2 ---- */
+/* ---- Dark mode (default): "Wanderlust Field Archive" — neutral #101B20 · primary #527A68 ·
+   secondary #8171A6 · tertiary #D8DCD2 ---- */
 :root,
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #101b20;
-  --bg-gradient: #101b20;
-  --surface: #18252b;
-  --surface-2: #1f2e35;
+  --bg: #0f1a1e;
+  --surface: #17232a;
+  --surface-2: #1d2b31;
   --text: #d8dcd2;
-  --text-muted: #8f9a96;
+  --text-muted: #8e9a96;
   --accent: #a4d1ba;
   --accent-deep: #527a68;
   --on-accent: #0f2a1e;
@@ -21,78 +21,104 @@
   --btn-border: #a4d1ba;
   --secondary: #c9b6f5;
   --secondary-deep: #8171a6;
-  --soft: #9fb3aa;
+  --soft: #b9c7c0;
   --highlight: #d8dcd2;
   --danger: #ef8a7d;
-  --danger-bg: #3a1c1e;
-  --on-danger: #2b0c0a;
+  --danger-bg: #3a1b1e;
+  --danger-border: #7d3434;
+  --danger-solid: #9c1f1f;
+  --on-danger: #ffffff;
   --ok: #a4d1ba;
   --on-ok: #0f2a1e;
-  --border: rgba(216, 220, 210, 0.1);
-  --border-strong: rgba(216, 220, 210, 0.28);
-  --fill: #1f2e35;
-  --fill-strong: #27383f;
+  --border: rgba(216, 220, 210, 0.08);
+  --border-strong: rgba(216, 220, 210, 0.24);
+  --fill: #1d2b31;
+  --fill-strong: #26363d;
   --track: #24333a;
-  --glass-bg: #18252b;
-  --glass-shadow: none;
-  --glass-shine: transparent;
-  --panel: #18252b;
-  --nav-bg: #131f24;
-  --nav-shadow: 0 -1px 0 rgba(216, 220, 210, 0.08);
+  --glass-bg: #17232a;
+  --card-body: #17232a;
+  --panel: #17232a;
+  --nav-bg: #0f1a1e;
   --backdrop: rgba(4, 9, 12, 0.7);
-  --mirror-frame: transparent;
-  --mirror-glass: #18252b;
-  --mirror-base: #18252b;
-  --map-center: #1d3a30;
-  --map-edge: #14242a;
-  --pin-core: #101b20;
+  --seg-bg: #17232a;
+  --seg-active: #527a68;
+  --on-seg-active: #eef5f0;
+  --chip-bg: #1d2b31;
+  --chip-active: #a4d1ba;
+  --on-chip-active: #0f2a1e;
+  --pill-bg: rgba(15, 26, 30, 0.86);
+  --pill-text: #d8dcd2;
+  --plate-bg: #1d2b31;
+  --family-bg: #2a2f3a;
+  --map-land: #c3b89b;
+  --map-contour: rgba(90, 76, 50, 0.32);
+  --map-ink: #2b2a22;
+  --pin-core: #17232a;
+  --pin-text: #e8ece4;
   --avatar-bg: #2c3b41;
+  --shutter-bg: #a4d1ba;
+  --shutter-ink: #0f2a1e;
   --font-body: 'Geist', system-ui, sans-serif;
+  --font-label: 'Geist', system-ui, sans-serif;
+  --label-weight: 600;
 }
 
-/* ---- Light mode: primary #79958B · secondary #A699C0 · tertiary #D8C5AA · neutral #465D56 ---- */
+/* ---- Light mode: "Botanical Field Guide" — primary #79958B · secondary #A699C0 ·
+   tertiary #D8C5AA · neutral #465D56 ---- */
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg: #eeede3;
-  --bg-gradient: #eeede3;
-  --surface: #e4e7dc;
-  --surface-2: #dce2d8;
-  --text: #1f2b27;
-  --text-muted: #5f6f69;
+  --bg: #efece2;
+  --surface: #f6f4ec;
+  --surface-2: #e4e7dc;
+  --text: #1d2925;
+  --text-muted: #5d6b65;
   --accent: #79958b;
   --accent-deep: #465d56;
-  --on-accent: #f6f8f2;
+  --on-accent: #ffffff;
   --btn-gradient: #79958b;
   --btn-border: #79958b;
   --secondary: #6f6290;
   --secondary-deep: #a699c0;
   --soft: #5c766c;
   --highlight: #8a6f4c;
-  --danger: #b3261e;
-  --danger-bg: #f6dfdb;
+  --danger: #a3261d;
+  --danger-bg: #f4e0da;
+  --danger-border: #d9a397;
+  --danger-solid: #b3261e;
   --on-danger: #ffffff;
   --ok: #4f7a63;
   --on-ok: #ffffff;
-  --border: rgba(70, 93, 86, 0.14);
-  --border-strong: rgba(70, 93, 86, 0.32);
-  --fill: #dfe4da;
-  --fill-strong: #d3dbd0;
+  --border: rgba(70, 93, 86, 0.12);
+  --border-strong: rgba(70, 93, 86, 0.3);
+  --fill: #e2e5db;
+  --fill-strong: #d6ddd2;
   --track: #d6ddd3;
-  --glass-bg: #e4e7dc;
-  --glass-shadow: none;
-  --glass-shine: transparent;
-  --panel: #f3f2ea;
-  --nav-bg: #eeede3;
-  --nav-shadow: 0 -1px 0 rgba(70, 93, 86, 0.14);
+  --glass-bg: #f6f4ec;
+  --card-body: #d7dfd2;
+  --panel: #f6f4ec;
+  --nav-bg: #efece2;
   --backdrop: rgba(31, 43, 39, 0.35);
-  --mirror-frame: transparent;
-  --mirror-glass: #e4e7dc;
-  --mirror-base: #e4e7dc;
-  --map-center: #dfeadf;
-  --map-edge: #c9d6cb;
-  --pin-core: #f6f8f2;
+  --seg-bg: #e1e4d9;
+  --seg-active: #79958b;
+  --on-seg-active: #ffffff;
+  --chip-bg: #dde2d7;
+  --chip-active: #79958b;
+  --on-chip-active: #ffffff;
+  --pill-bg: rgba(246, 244, 236, 0.94);
+  --pill-text: #1d2925;
+  --plate-bg: #f6f4ec;
+  --family-bg: #d9d3e4;
+  --map-land: #dfe8da;
+  --map-contour: rgba(121, 149, 139, 0.38);
+  --map-ink: #34443e;
+  --pin-core: #f6f4ec;
+  --pin-text: #1d2925;
   --avatar-bg: #d8c5aa;
+  --shutter-bg: #f3f1e9;
+  --shutter-ink: #79958b;
   --font-body: 'Source Sans 3', system-ui, sans-serif;
+  --font-label: 'Geist Mono', ui-monospace, monospace;
+  --label-weight: 500;
 }
 
 :root {
@@ -124,7 +150,7 @@ a { color: var(--accent-deep); }
   max-width: 480px;
   min-height: 100vh;
   margin: 0 auto;
-  padding: 0 16px 104px;
+  padding: 0 16px 96px;
   background: var(--bg);
 }
 @media (min-width: 520px) {

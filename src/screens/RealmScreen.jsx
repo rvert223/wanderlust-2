@@ -4,12 +4,14 @@ import { useMemo, useState } from 'react';
 import Chip from '../components/Chip';
 import EnchantedMap from '../components/EnchantedMap';
 import GlassCard from '../components/GlassCard';
+import Icon from '../components/Icon';
 import MagicMirror from '../components/MagicMirror';
 import SightingCard from '../components/SightingCard';
 import { RADII } from '../config/app';
 import { CATEGORIES } from '../config/categories';
 import { detectPatterns, nearbySightings } from '../services/sightingsService';
 import { useApp } from '../state/AppContext';
+import { formatDistance } from '../utils/geo';
 
 const matchesQuery = (sighting, query) =>
   `${sighting.title} ${sighting.place} ${sighting.description} ${CATEGORIES[sighting.category].label}`.toLowerCase().includes(query.trim().toLowerCase());
@@ -29,30 +31,33 @@ export default function RealmScreen() {
 
   return (
     <>
-      <MagicMirror query={query} onQuery={setQuery} vision={visible[0]} onOpen={(s) => setSelectedId(s.id)} />
+      <MagicMirror query={query} onQuery={setQuery} vision={visible[0]} onOpen={(s) => setSelectedId(s.id)} count={visible.length} />
 
       <div className="chips">
-        <Chip active={!category} onClick={() => setCategory(null)}>✨ All</Chip>
+        <Chip active={!category} onClick={() => setCategory(null)}>All ({visible.length})</Chip>
         {Object.entries(CATEGORIES).map(([id, { label, emoji, color }]) => (
           <Chip key={id} active={category === id} color={color} onClick={() => setCategory(category === id ? null : id)}>{emoji} {label}</Chip>
         ))}
       </div>
       <div className="chips">
         {RADII.map(({ km, label }) => (
-          <Chip key={km} active={radiusKm === km} onClick={() => setRadiusKm(km)}>🔭 {label}</Chip>
+          <Chip key={km} active={radiusKm === km} onClick={() => setRadiusKm(km)}>{label}</Chip>
         ))}
       </div>
 
       <GlassCard className="map-card">
-        <EnchantedMap center={location.coords} sightings={visible} patterns={patterns} radiusKm={radiusKm} selectedId={selectedId} onSelect={setSelectedId} />
+        <div className="map-frame">
+          <EnchantedMap center={location.coords} sightings={visible} patterns={patterns} radiusKm={radiusKm} selectedId={selectedId} onSelect={setSelectedId} />
+          <span className="photo-pill map-place"><Icon name="target" /> {location.placeName}{location.approximate && ' (approximate)'}</span>
+        </div>
         <p className="map-caption">
-          📍 {location.placeName}{location.approximate && ' (approximate)'} · {visible.length} sighting{visible.length === 1 ? '' : 's'}
+          <span><i className="dot" /> {visible.length} sighting{visible.length === 1 ? '' : 's'} within {formatDistance(radiusKm)}</span>
         </p>
       </GlassCard>
 
       {patterns.length > 0 && (
         <GlassCard className="patterns">
-          <h3>🔮 Pattern whispers</h3>
+          <h3>Pattern whispers</h3>
           {patterns.map((pattern) => <p key={pattern.key} className={pattern.kind === 'hazard' ? 'danger-text' : ''}>{pattern.label}</p>)}
         </GlassCard>
       )}
