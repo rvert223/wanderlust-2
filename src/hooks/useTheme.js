@@ -4,7 +4,7 @@ import { useLayoutEffect, useState } from 'react';
 import { readJson, writeJson } from '../utils/storage';
 
 const STORAGE_KEY = 'wanderlust.theme.v1';
-const BROWSER_BAR_COLORS = { dark: '#101b20', light: '#d9f3e8' };
+const BROWSER_BAR_COLORS = { dark: '#101b20', light: '#eeede3' };
 
 const initialTheme = () => readJson(STORAGE_KEY, null) || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
 

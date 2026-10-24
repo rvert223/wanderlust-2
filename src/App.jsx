@@ -1,10 +1,10 @@
 // App shell: picks the active screen and mounts the always-present layers
-// (sparkles, theme toggle, bottom navigation, toasts and the profile sheet).
+// (sparkles, top bar, bottom navigation, toasts and the profile sheet).
 import BottomNav from './components/BottomNav';
 import ProfileSheet from './components/ProfileSheet';
 import SparkleCanvas from './components/SparkleCanvas';
-import ThemeToggle from './components/ThemeToggle';
 import ToastStack from './components/ToastStack';
+import TopBar from './components/TopBar';
 import CaptureScreen from './screens/CaptureScreen';
 import CommunityScreen from './screens/CommunityScreen';
 import GhostScreen from './screens/GhostScreen';
@@ -28,7 +28,7 @@ export default function App() {
   return (
     <div className="app">
       <SparkleCanvas />
-      <ThemeToggle />
+      <TopBar />
       {/* `key` remounts the screen so its entrance animation replays on every tab change */}
       <main className="screen" key={route}>
         <Screen />

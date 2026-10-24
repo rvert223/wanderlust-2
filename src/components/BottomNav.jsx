@@ -1,13 +1,14 @@
-// Bottom tab bar with a floating gold wand in the middle for Capture
-// (the Scan screen is part of the capture flow, so the wand stays lit on it too).
+// Bottom tab bar with a round camera button in the middle for Capture
+// (the Scan screen is part of the capture flow, so it stays lit on it too).
 import { useApp } from '../state/AppContext';
+import Icon from './Icon';
 
 const TABS = [
-  { id: 'realm', icon: '🔮', label: 'Realm' },
-  { id: 'ghost', icon: '👻', label: 'Haunts' },
-  { id: 'capture', icon: '🪄', label: 'Capture', center: true },
-  { id: 'community', icon: '🧙', label: 'Circle' },
-  { id: 'profile', icon: '👑', label: 'Me' },
+  { id: 'realm', icon: 'map', label: 'Realm' },
+  { id: 'ghost', icon: 'audio', label: 'Haunts' },
+  { id: 'capture', icon: 'aperture', label: 'Capture', center: true },
+  { id: 'community', icon: 'users', label: 'Circle' },
+  { id: 'profile', icon: 'user', label: 'Me' },
 ];
 
 export default function BottomNav() {
@@ -18,7 +19,7 @@ export default function BottomNav() {
         const active = route === id || (center && route === 'scan');
         return (
           <button key={id} className={`nav-tab ${center ? 'center' : ''} ${active ? 'active' : ''}`} onClick={() => navigate(id)} aria-current={active ? 'page' : undefined}>
-            <span className="nav-icon">{icon}</span>
+            <span className="nav-icon"><Icon name={icon} /></span>
             <span className="nav-label">{label}</span>
           </button>
         );

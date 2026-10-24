@@ -3,6 +3,7 @@
 import { sightingEmoji } from '../config/categories';
 import { TAGLINE } from '../config/app';
 import { formatDistance } from '../utils/geo';
+import Icon from './Icon';
 
 export default function MagicMirror({ query, onQuery, vision, onOpen }) {
   return (
@@ -14,13 +15,16 @@ export default function MagicMirror({ query, onQuery, vision, onOpen }) {
             <span key={index} style={{ '--i': index }}>{word} </span>
           ))}
         </p>
-        <input
-          className="mirror-input"
-          value={query}
-          onChange={(event) => onQuery(event.target.value)}
-          placeholder="Ask the mirror… waterfall, ghost, hemlock"
-          aria-label="Ask the mirror"
-        />
+        <label className="mirror-search">
+          <Icon name="search" />
+          <input
+            className="mirror-input"
+            value={query}
+            onChange={(event) => onQuery(event.target.value)}
+            placeholder="Ask the mirror… waterfall, ghost, hemlock"
+            aria-label="Ask the mirror"
+          />
+        </label>
         {/* `key` replays the ripple animation whenever the reflected vision changes */}
         <button className="mirror-vision" key={vision?.id ?? 'none'} disabled={!vision} onClick={() => onOpen(vision)}>
           {vision ? (

@@ -31,7 +31,7 @@ export default function CaptureScreen() {
       <ScreenHeader title="Capture" subtitle="Only live magic is trusted — no uploads, no fakes." />
       <LiveCamera videoRef={videoRef} status={status} />
       <p className="map-caption">📍 {location.placeName} · 🛡️ time, GPS &amp; a fingerprint are sealed into every photo</p>
-      <button className="shutter" onClick={snap} disabled={!canSnap} aria-label="Capture a live photo">🪄</button>
+      <button className="shutter" onClick={snap} disabled={!canSnap} aria-label="Capture a live photo"><span className="shutter-core" /></button>
       {flashing && <div className="flash" />}
     </>
   );
