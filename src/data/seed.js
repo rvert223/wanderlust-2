@@ -41,9 +41,9 @@ export const SEED_USERS = [
 
 /** The signed-in wanderer (replace with your auth/user service). */
 export const DEFAULT_USER = {
-  id: 'me', name: 'Wanderer', handle: '@you', emoji: '👸', verified: false,
-  title: 'Newly-sparkled adventurer', topics: [], home: null,
-  background: 'Just arrived in the realm, glass slippers still shiny.',
+  id: 'me', name: 'Explorer', handle: '@you', emoji: '👸', verified: false,
+  title: 'New explorer', topics: [], home: null,
+  background: '',
   stats: { posted: 0, helped: 0, scanned: 0 },
 };
 

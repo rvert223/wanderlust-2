@@ -1,11 +1,12 @@
-// A wanderer's profile: avatar, alchemy rank + progress, stat tiles (images posted, people
-// helped, plants scanned), badges, real background and a Muse-written potion bio.
+// A person's profile: photo, level + progress, stat tiles (images posted, people helped, plants
+// scanned), badges and background. On your own profile you can change or remove your photo.
 // Used by both the Profile tab and the profile sheet opened from any username.
-import { useAsync } from '../hooks/useAsync';
-import { badgesFor, getPotionBio, rankFor } from '../services/profileService';
+import { useRef } from 'react';
+import { badgesFor, rankFor } from '../services/profileService';
 import { useApp } from '../state/AppContext';
-import Icon from './Icon';
+import { toSquareDataUrl } from '../utils/image';
 import Avatar from './Avatar';
+import Icon from './Icon';
 import MagicButton from './MagicButton';
 
 const STAT_TILES = [
@@ -14,22 +15,48 @@ const STAT_TILES = [
   { key: 'scanned', label: 'Plants scanned' },
 ];
 
+function PhotoEditor({ photo }) {
+  const { updateUser, notify } = useApp();
+  const inputRef = useRef(null);
+
+  const pick = async (event) => {
+    const [file] = event.target.files;
+    event.target.value = '';
+    if (!file) return;
+    try {
+      updateUser({ photo: await toSquareDataUrl(file) });
+    } catch {
+      notify({ title: 'Photo not updated', body: 'That file could not be read as an image. Try a JPG or PNG.' });
+    }
+  };
+
+  return (
+    <div className="photo-actions">
+      <input ref={inputRef} id="profile-photo" type="file" accept="image/*" hidden onChange={pick} />
+      <button className="link-btn" onClick={() => inputRef.current.click()}>
+        <Icon name="camera" /> {photo ? 'Change photo' : 'Add photo'}
+      </button>
+      {photo && <button className="link-btn" onClick={() => updateUser({ photo: null })}>Remove</button>}
+    </div>
+  );
+}
+
 export default function ProfilePanel({ person, isSelf }) {
   const { notify } = useApp();
   const rank = rankFor(person.stats);
-  const { data: bio } = useAsync(() => getPotionBio(person), [person.id, JSON.stringify(person.stats)]);
 
   return (
     <div className="profile">
-      <Avatar name={person.name} verified={person.verified} size={84} />
+      <Avatar name={person.name} photo={person.photo} verified={person.verified} size={84} />
+      {isSelf && <PhotoEditor photo={person.photo} />}
       <h2>{person.name}</h2>
-      <p className="handle">{person.handle} · {person.title}</p>
+      {!isSelf && <p className="handle">{person.handle}</p>}
       {person.verified && <span className="verify-badge verified">Community verified</span>}
 
       <div className="rank">
         <strong>{rank.name}</strong>
         <div className="rank-bar"><span style={{ width: `${rank.progress * 100}%` }} /></div>
-        <small>{rank.points} pts{rank.next && ` · on the way to ${rank.next}`}</small>
+        <small>{rank.points} pts{rank.next && ` · next level: ${rank.next}`}</small>
       </div>
 
       <div className="stat-tiles">
@@ -41,8 +68,7 @@ export default function ProfilePanel({ person, isSelf }) {
         ))}
       </div>
 
-      <blockquote className="potion-bio">{bio ?? '…the cauldron is brewing a bio…'}</blockquote>
-      <p className="background">{person.background}</p>
+      {!isSelf && person.background && <p className="background">{person.background}</p>}
 
       <div className="tags">{badgesFor(person.stats).map((badge) => <span key={badge.id}>{badge.label}</span>)}</div>
 

@@ -16,7 +16,7 @@ export default function MagicMirror({ query, onQuery, vision, onOpen, count }) {
           className="mirror-input"
           value={query}
           onChange={(event) => onQuery(event.target.value)}
-          placeholder="Ask the mirror… waterfall, ghost, hemlock"
+          placeholder="Search"
           aria-label="Ask the mirror"
         />
       </label>

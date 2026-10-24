@@ -1,6 +1,6 @@
-// Circle: anonymous community feed. Top — recent posts grouped by place (e.g. "Barton Springs
+// Community: anonymous feed. Top — recent posts grouped by place (e.g. "Barton Springs
 // Pool Posts"), nearest place first, with each place's distance from the user. No names shown.
-// Bottom — the Verification Council, where the user votes on pending sightings.
+// Bottom — a collapsed "Needs verification" dropdown where the user votes on pending sightings.
 import CategoryIcon from '../components/CategoryIcon';
 import GlassCard from '../components/GlassCard';
 import Icon from '../components/Icon';
@@ -85,16 +85,24 @@ export default function CommunityScreen() {
 
   return (
     <>
-      <ScreenHeader title="The Circle" />
+      <ScreenHeader title="Community" />
 
       {groups.length === 0 && <p className="empty">No posts yet. Be the first to wave your wand.</p>}
       {groups.map((group) => (
         <PlaceGroup key={group.place} group={group} onOpen={(id) => { setSelectedId(id); navigate('realm'); }} />
       ))}
 
-      <h3 className="section-title">Verification Council</h3>
-      {pending.length === 0 && <p className="empty">No sightings await a verdict. The realm is at peace.</p>}
-      {pending.map((sighting) => <VerifyCard key={sighting.id} sighting={sighting} user={user} onVote={vote} />)}
+      <details className="dropdown">
+        <summary>
+          <span>Needs verification</span>
+          <span className="count-pill">{pending.length}</span>
+          <Icon name="chevron" />
+        </summary>
+        <div className="dropdown-body">
+          {pending.length === 0 && <p className="empty">Nothing waiting for verification.</p>}
+          {pending.map((sighting) => <VerifyCard key={sighting.id} sighting={sighting} user={user} onVote={vote} />)}
+        </div>
+      </details>
     </>
   );
 }

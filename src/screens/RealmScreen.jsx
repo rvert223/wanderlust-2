@@ -21,7 +21,7 @@ export default function RealmScreen() {
   const { sightings, location, selectedId, setSelectedId } = useApp();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState(null);
-  const [radiusKm, setRadiusKm] = useState(RADII[1].km);
+  const [radiusKm, setRadiusKm] = useState(RADII[0].km);
 
   const visible = useMemo(
     () => nearbySightings(sightings, location.coords, radiusKm).filter((s) => (!category || s.category === category) && matchesQuery(s, query)),

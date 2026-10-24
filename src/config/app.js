@@ -6,10 +6,9 @@ export const DEFAULT_CENTER = { lat: 30.2672, lng: -97.7431 };
 
 // "Scry radius" options on the map, in kilometres.
 export const RADII = [
-  { km: 10, label: 'Local' },
   { km: 25, label: 'Nearby' },
   { km: 250, label: 'Region' },
-  { km: 2500, label: 'Realm' },
+  { km: 2500, label: 'Country' },
   { km: 8000, label: 'World' },
 ];
 
@@ -29,12 +28,12 @@ export const INFRASOUND = {
   cooldownMs: 12000, // minimum gap between Muse warnings
 };
 
-// Alchemy ranks, earned from points (see profileService.pointsFor).
+// Levels, earned from points (see profileService.pointsFor).
 export const RANKS = [
-  { name: 'Apprentice', min: 0 },
-  { name: 'Herbalist', min: 50 },
-  { name: 'Alchemist', min: 150 },
-  { name: 'Archmage', min: 400 },
+  { name: 'Beginner', min: 0 },
+  { name: 'Explorer', min: 50 },
+  { name: 'Naturalist', min: 150 },
+  { name: 'Expert', min: 400 },
 ];
 
 export const DISCLAIMERS = [

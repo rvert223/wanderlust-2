@@ -7,7 +7,7 @@ const TABS = [
   { id: 'realm', icon: 'map', label: 'Realm' },
   { id: 'ghost', icon: 'audio', label: 'Haunts' },
   { id: 'capture', icon: 'camera', label: 'Camera', center: true },
-  { id: 'community', icon: 'users', label: 'Circle' },
+  { id: 'community', icon: 'users', label: 'Community' },
   { id: 'profile', icon: 'user', label: 'Me' },
 ];
 

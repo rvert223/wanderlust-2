@@ -33,9 +33,9 @@ export function rankFor(stats) {
 
 const BADGES = [
   { id: 'scout', emoji: '🔍', label: 'First Scan', earned: (s) => s.scanned >= 1 },
-  { id: 'herald', emoji: '📯', label: 'Herald', earned: (s) => s.posted >= 1 },
+  { id: 'herald', emoji: '📯', label: 'First Post', earned: (s) => s.posted >= 1 },
   { id: 'healer', emoji: '🧪', label: 'Helping Hand', earned: (s) => s.helped >= 1 },
-  { id: 'sage', emoji: '🔮', label: 'Sage (50+ helped)', earned: (s) => s.helped >= 50 },
+  { id: 'sage', emoji: '🔮', label: 'Top Helper (50+ helped)', earned: (s) => s.helped >= 50 },
 ];
 export const badgesFor = (stats) => BADGES.filter((badge) => badge.earned(stats));
 

@@ -97,11 +97,6 @@ export default function GhostScreen() {
         </div>
       </GlassCard>
 
-      <h3 className="section-title">The Investigator&rsquo;s log</h3>
-      {log.map(({ id, who, text }) => (
-        <p key={id} className={`log-line ${who}`}><b>{who === 'you' ? 'You' : 'Investigator'}</b> {text}</p>
-      ))}
-
       <h3 className="section-title">Haunted places nearby</h3>
       {hauntedPlaces.map((sighting) => (
         <SightingCard key={sighting.id} sighting={sighting} onSelect={(id) => { setSelectedId(id); navigate('realm'); }} />

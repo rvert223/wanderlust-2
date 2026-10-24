@@ -1,7 +1,6 @@
 // Capture (screen 1 of 2): hold up the phone and take a LIVE photo. The frame is stamped with
 // time, GPS and a fingerprint, stored as the draft, and the user flows on to the Scan screen.
 import { useState } from 'react';
-import Icon from '../components/Icon';
 import LiveCamera from '../components/LiveCamera';
 import ScreenHeader from '../components/ScreenHeader';
 import { captureDemoFrame, captureLivePhoto } from '../connectors/camera';
@@ -32,15 +31,7 @@ export default function CaptureScreen() {
       <ScreenHeader title="Capture" />
       <LiveCamera videoRef={videoRef} status={status} placeName={location.placeName} />
       <div className="capture-controls">
-        <button className="side-btn" onClick={() => navigate('ghost')}>
-          <span className="side-icon"><Icon name="audio" /></span>
-          <small>Haunts</small>
-        </button>
         <button className="shutter" onClick={snap} disabled={!canSnap} aria-label="Capture a live photo"><span className="shutter-core" /></button>
-        <button className="side-btn" onClick={() => navigate('profile')}>
-          <span className="side-icon"><Icon name="notebook" /></span>
-          <small>Journal</small>
-        </button>
       </div>
       {flashing && <div className="flash" />}
     </>

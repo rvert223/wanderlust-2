@@ -41,6 +41,7 @@ export function AppProvider({ children }) {
   };
 
   // ---- Domain actions ---------------------------------------------------
+  const updateUser = (fields) => setUser((current) => ({ ...current, ...fields }));
   const bumpStat = (key) => setUser((current) => ({ ...current, stats: { ...current.stats, [key]: current.stats[key] + 1 } }));
 
   const postSighting = async (fields) => {
@@ -95,12 +96,12 @@ export function AppProvider({ children }) {
     if (previousRank.current === rankName) return;
     previousRank.current = rankName;
     celebrate();
-    notify({ emoji: '👑', title: `You are now ${rankName}!`, body: 'Your cauldron glows with new power.' });
+    notify({ emoji: '👑', title: `You are now ${rankName}!`, body: 'Keep exploring.' });
   }, [user, rankName]);
 
   const value = {
     route, navigate, location, sightings, user, draft, setDraft, selectedId, setSelectedId,
-    profileId, openProfile: setProfileId, toasts, notify, dismissToast, bumpStat, postSighting, vote,
+    profileId, openProfile: setProfileId, toasts, notify, dismissToast, updateUser, bumpStat, postSighting, vote,
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
