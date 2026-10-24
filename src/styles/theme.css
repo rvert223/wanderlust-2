@@ -1,129 +1,131 @@
-/* Theme: the "Fairytale Passport" look (HackTX '26). Color tokens for the DARK (leather passport
-   cover) and LIGHT (cream passport pages) modes, base elements, app shell and shared keyframes.
+/* Theme: the "Fairytale Passport" look (HackTX '26) in the field-guide palette. Color tokens for the
+   DARK ("Wanderlust Field Archive": neutral #101B20 · primary #527A68 · secondary #8171A6 · tertiary
+   #D8DCD2) and LIGHT ("Botanical Field Guide": primary #79958B · secondary #A699C0 · tertiary #D8C5AA ·
+   neutral #465D56) modes, base elements, app shell and shared keyframes.
    Switch modes by setting <html data-theme="dark|light"> (see hooks/useTheme.js).
    Token roles: ink = brown text and rules · gold = foil accents · rose / slipper / ivy = the storybook
-   accents (rose, glass slipper, ivy) · stitch = dashed stamp-box borders · hole = the colour that
-   "punches" stamp perforations · leather = the passport-cover brown used by the bottom bar. */
+   accents (lavender, light lavender, sage) · stitch = dashed stamp-box borders · hole = the colour that
+   "punches" stamp perforations · leather = the deep neutral used by the bottom bar. */
 
-/* ---- Dark mode (default): the leather passport cover ---- */
+/* ---- Dark mode (default): Wanderlust Field Archive ---- */
 :root,
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #241812;
-  --grain: rgba(255, 236, 200, 0.035);
-  --surface: #33231b;
-  --surface-2: #3e2b21;
-  --stamp-paper: #f3e9d3;
-  --text: #f1e6d0;
-  --text-muted: #b8a58c;
-  --ink-line: rgba(241, 230, 208, 0.5);
-  --gold: #d9b56a;
-  --gold-soft: #f0d99c;
-  --rose: #c24a5e;
-  --slipper: #9cc7e4;
-  --ivy: #6f9f84;
-  --accent: #d9b56a;
-  --accent-deep: #b8903f;
-  --on-accent: #241812;
-  --secondary: #9cc7e4;
-  --secondary-deep: #6d9fc4;
-  --soft: #d8c6a8;
-  --danger: #f2a4a4;
-  --danger-bg: #44191f;
-  --danger-border: #8e3a44;
-  --danger-solid: #9b2335;
-  --on-danger: #fff4ea;
-  --ok: #8fc2a3;
-  --border: rgba(241, 230, 208, 0.12);
-  --border-strong: rgba(241, 230, 208, 0.3);
-  --stitch: rgba(241, 230, 208, 0.42);
-  --hole: #33231b;
-  --fill: #3d2a21;
-  --fill-strong: #4a342a;
-  --track: #4a342a;
-  --glass-bg: #33231b;
-  --panel: #33231b;
-  --leather: #1b110c;
-  --leather-ink: #f1e6d0;
-  --backdrop: rgba(10, 6, 4, 0.7);
-  --chip-active: #d9b56a;
-  --on-chip-active: #241812;
-  --pill-bg: rgba(36, 24, 18, 0.88);
-  --pill-text: #f1e6d0;
-  --map-land: #3a2820;
-  --map-contour: rgba(217, 181, 106, 0.28);
-  --map-ink: #f1e6d0;
-  --pin-core: #241812;
-  --avatar-bg: #4a342a;
-  --scene-sky-top: #120b08;
-  --scene-sky-bottom: #3b2a44;
-  --scene-orb: #f1e6d0;
-  --scene-star: #d9b56a;
-  --scene-contour: rgba(217, 181, 106, 0.22);
-  --scene-ridge-far: #3d5a4b;
-  --scene-ridge-near: #22362d;
-  --scene-trail: #d9b56a;
-  --scene-frame: #d9b56a;
+  --bg: #101b20;
+  --grain: rgba(216, 220, 210, 0.03);
+  --surface: #18252b;
+  --surface-2: #1f2e35;
+  --stamp-paper: #d8dcd2;
+  --text: #d8dcd2;
+  --text-muted: #8e9a96;
+  --ink-line: rgba(216, 220, 210, 0.42);
+  --gold: #a4d1ba;
+  --gold-soft: #cfe8da;
+  --rose: #c9b6f5;
+  --slipper: #c9b6f5;
+  --ivy: #a4d1ba;
+  --accent: #a4d1ba;
+  --accent-deep: #527a68;
+  --on-accent: #0f2a1e;
+  --secondary: #c9b6f5;
+  --secondary-deep: #8171a6;
+  --soft: #b9c7c0;
+  --danger: #ef9a9a;
+  --danger-bg: #3a1b1e;
+  --danger-border: #7d3434;
+  --danger-solid: #b3261e;
+  --on-danger: #ffffff;
+  --ok: #a4d1ba;
+  --border: rgba(216, 220, 210, 0.1);
+  --border-strong: rgba(216, 220, 210, 0.26);
+  --stitch: rgba(216, 220, 210, 0.36);
+  --hole: #18252b;
+  --fill: #1f2e35;
+  --fill-strong: #27383f;
+  --track: #24333a;
+  --glass-bg: #18252b;
+  --panel: #18252b;
+  --leather: #0b1417;
+  --leather-ink: #d8dcd2;
+  --backdrop: rgba(4, 9, 12, 0.7);
+  --chip-active: #a4d1ba;
+  --on-chip-active: #0f2a1e;
+  --pill-bg: rgba(16, 27, 32, 0.86);
+  --pill-text: #d8dcd2;
+  --map-land: #1d3a30;
+  --map-contour: rgba(164, 209, 186, 0.22);
+  --map-ink: #d8dcd2;
+  --pin-core: #101b20;
+  --avatar-bg: #2c3b41;
+  --scene-sky-top: #08121a;
+  --scene-sky-bottom: #2b2f4a;
+  --scene-orb: #d8dcd2;
+  --scene-star: #c9b6f5;
+  --scene-contour: rgba(164, 209, 186, 0.22);
+  --scene-ridge-far: #2f5546;
+  --scene-ridge-near: #163029;
+  --scene-trail: #a4d1ba;
+  --scene-frame: #a4d1ba;
 }
 
-/* ---- Light mode: the cream passport pages ---- */
+/* ---- Light mode: Botanical Field Guide ---- */
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg: #ece3cf;
-  --grain: rgba(59, 42, 33, 0.045);
-  --surface: #f8f2e4;
-  --surface-2: #e9dfc8;
-  --stamp-paper: #fffaf0;
-  --text: #2b1d17;
-  --text-muted: #6f5b4c;
-  --ink-line: rgba(43, 29, 23, 0.6);
-  --gold: #b08637;
-  --gold-soft: #e2c98a;
-  --rose: #9b2c3f;
-  --slipper: #7fb0d4;
-  --ivy: #2f5d4a;
-  --accent: #3b2a21;
-  --accent-deep: #2b1d17;
-  --on-accent: #f8f2e4;
-  --secondary: #4f7fa3;
-  --secondary-deep: #7fb0d4;
-  --soft: #6b4f3a;
-  --danger: #9b2335;
-  --danger-bg: #f5e0db;
-  --danger-border: #d6a19c;
-  --danger-solid: #8e2232;
-  --on-danger: #fff7f0;
-  --ok: #2f5d4a;
-  --border: rgba(59, 42, 33, 0.16);
-  --border-strong: rgba(59, 42, 33, 0.36);
-  --stitch: rgba(59, 42, 33, 0.5);
-  --hole: #f8f2e4;
-  --fill: #efe6d2;
-  --fill-strong: #e4d8bd;
-  --track: #e2d5b9;
-  --glass-bg: #f8f2e4;
-  --panel: #f8f2e4;
-  --leather: #3b2a21;
-  --leather-ink: #f3e9d3;
-  --backdrop: rgba(43, 29, 23, 0.4);
-  --chip-active: #3b2a21;
-  --on-chip-active: #f8f2e4;
-  --pill-bg: rgba(255, 250, 240, 0.94);
-  --pill-text: #2b1d17;
-  --map-land: #f1e6c9;
-  --map-contour: rgba(120, 88, 48, 0.28);
-  --map-ink: #3b2a21;
-  --pin-core: #fffaf0;
-  --avatar-bg: #e2c98a;
-  --scene-sky-top: #fbf3df;
-  --scene-sky-bottom: #ead8b2;
-  --scene-orb: #e2c98a;
-  --scene-star: #b08637;
-  --scene-contour: rgba(59, 42, 33, 0.16);
-  --scene-ridge-far: #9db8a5;
-  --scene-ridge-near: #2f5d4a;
-  --scene-trail: #9b2c3f;
-  --scene-frame: #b08637;
+  --bg: #cfe5da;
+  --grain: rgba(70, 93, 86, 0.04);
+  --surface: #dff3e8;
+  --surface-2: #c9dfd4;
+  --stamp-paper: #f5fbf8;
+  --text: #1f2b27;
+  --text-muted: #55665f;
+  --ink-line: rgba(70, 93, 86, 0.6);
+  --gold: #8a6f4c;
+  --gold-soft: #d8c5aa;
+  --rose: #6f6290;
+  --slipper: #a699c0;
+  --ivy: #465d56;
+  --accent: #4a6359;
+  --accent-deep: #24332e;
+  --on-accent: #ffffff;
+  --secondary: #6f6290;
+  --secondary-deep: #a699c0;
+  --soft: #465d56;
+  --danger: #b3261e;
+  --danger-bg: #f6dfdb;
+  --danger-border: #d9a397;
+  --danger-solid: #c62828;
+  --on-danger: #ffffff;
+  --ok: #3f6b58;
+  --border: rgba(70, 93, 86, 0.16);
+  --border-strong: rgba(70, 93, 86, 0.34);
+  --stitch: rgba(70, 93, 86, 0.48);
+  --hole: #dff3e8;
+  --fill: #d3eadf;
+  --fill-strong: #c4ddd1;
+  --track: #c4ddd1;
+  --glass-bg: #dff3e8;
+  --panel: #dff3e8;
+  --leather: #465d56;
+  --leather-ink: #dff3e8;
+  --backdrop: rgba(31, 43, 39, 0.38);
+  --chip-active: #4a6359;
+  --on-chip-active: #ffffff;
+  --pill-bg: rgba(245, 251, 248, 0.94);
+  --pill-text: #1f2b27;
+  --map-land: #e6f4ec;
+  --map-contour: rgba(121, 149, 139, 0.36);
+  --map-ink: #34443e;
+  --pin-core: #f5fbf8;
+  --avatar-bg: #d8c5aa;
+  --scene-sky-top: #f2f8f4;
+  --scene-sky-bottom: #d9d2ea;
+  --scene-orb: #d8c5aa;
+  --scene-star: #8171a6;
+  --scene-contour: rgba(70, 93, 86, 0.16);
+  --scene-ridge-far: #a7bdb1;
+  --scene-ridge-near: #79958b;
+  --scene-trail: #6f6290;
+  --scene-frame: #79958b;
 }
 
 :root {

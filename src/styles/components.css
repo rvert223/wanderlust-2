@@ -47,7 +47,7 @@
     radial-gradient(circle at 100% 50%, var(--hole) 2.8px, transparent 3.2px) calc(100% + 1px) 0 / 6px 10px repeat-y,
     linear-gradient(var(--stamp-ink), var(--stamp-ink)) content-box,
     var(--stamp-paper);
-  filter: drop-shadow(0 2px 3px rgba(20, 10, 4, 0.18));
+  filter: drop-shadow(0 2px 3px rgba(5, 14, 17, 0.18));
 }
 
 /* ---- Labels floating over photos and maps (postmarks) ---- */
@@ -209,7 +209,7 @@
   color: var(--leather-ink);
   background: var(--leather);
   border-radius: 18px 18px 0 0;
-  box-shadow: 0 -6px 20px rgba(20, 10, 4, 0.18);
+  box-shadow: 0 -6px 20px rgba(5, 14, 17, 0.18);
 }
 .bottom-nav::before { content: ''; position: absolute; inset: 6px 10px auto; border-top: 1.5px dashed color-mix(in srgb, var(--leather-ink) 45%, transparent); pointer-events: none; }
 .nav-tab {
@@ -232,7 +232,7 @@
 .nav-tab.active { color: var(--gold-soft); }
 .nav-tab.active .nav-label::after { content: ''; display: block; width: 18px; height: 7px; margin: 2px auto 0; background: var(--gold-soft); -webkit-mask: var(--bat) center / contain no-repeat; mask: var(--bat) center / contain no-repeat; }
 .nav-tab:focus-visible { outline: 2px solid var(--gold-soft); outline-offset: -2px; border-radius: 10px; }
-/* the camera: a gold wax seal */
+/* the camera: a sage wax seal */
 .nav-tab.center {
   flex: none;
   justify-content: center;
@@ -241,18 +241,18 @@
   margin: -30px 6px 0;
   padding: 0;
   border-radius: 50%;
-  color: #3b2a21;
-  background: radial-gradient(circle at 35% 30%, #f6e2a8, #d9b56a 55%, #a87e33);
-  border: 2px dashed rgba(59, 42, 33, 0.45);
-  box-shadow: 0 0 0 4px var(--leather), 0 0 0 5px rgba(217, 181, 106, 0.6), 0 6px 14px rgba(20, 10, 4, 0.35);
+  color: #0f2a1e;
+  background: radial-gradient(circle at 35% 30%, #d6efe2, #a4d1ba 55%, #79958b);
+  border: 2px dashed rgba(15, 42, 30, 0.4);
+  box-shadow: 0 0 0 4px var(--leather), 0 0 0 5px rgba(164, 209, 186, 0.6), 0 6px 14px rgba(5, 14, 17, 0.35);
 }
 .nav-tab.center .nav-icon { font-size: 1.5rem; }
 .nav-tab.center .nav-label { display: none; }
-.nav-tab.center.active { border: 2px solid #9b2c3f; box-shadow: 0 0 0 4px var(--leather), 0 0 0 6px #c24a5e, 0 6px 14px rgba(20, 10, 4, 0.35); }
+.nav-tab.center.active { border: 2px solid #8171a6; box-shadow: 0 0 0 4px var(--leather), 0 0 0 6px #c9b6f5, 0 6px 14px rgba(5, 14, 17, 0.35); }
 
 /* ---- ToastStack: tickets ---- */
 .toast-stack { position: fixed; z-index: 70; top: 12px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; width: min(440px, calc(100% - 24px)); }
-.toast { display: flex; gap: 12px; padding: 12px 14px; cursor: pointer; animation: drop 0.3s ease-out; background: var(--panel); border-color: var(--gold); box-shadow: 0 12px 30px rgba(20, 10, 4, 0.25); }
+.toast { display: flex; gap: 12px; padding: 12px 14px; cursor: pointer; animation: drop 0.3s ease-out; background: var(--panel); border-color: var(--gold); box-shadow: 0 12px 30px rgba(5, 14, 17, 0.25); }
 .toast-icon { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; color: var(--gold); border: 1px solid var(--gold); }
 .toast strong { font: 500 1rem var(--font-sc); letter-spacing: 0.03em; }
 .toast p { font-size: 0.88rem; margin-top: 2px; }

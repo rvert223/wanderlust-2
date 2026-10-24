@@ -4,8 +4,8 @@ import { useEffect, useRef } from 'react';
 
 // Glitter palettes per theme: bright dust glows on dark; deeper tones stay visible on light.
 const PALETTES = {
-  dark: ['#d9b56a', '#f0d99c', '#c24a5e', '#9cc7e4', '#6f9f84'],
-  light: ['#b08637', '#9b2c3f', '#7fb0d4', '#2f5d4a', '#e2c98a'],
+  dark: ['#a4d1ba', '#d8dcd2', '#c9b6f5', '#8171a6', '#527a68'],
+  light: ['#79958b', '#465d56', '#a699c0', '#d8c5aa', '#8a6f4c'],
 };
 const isLight = () => document.documentElement.dataset.theme === 'light';
 const MAX_PARTICLES = 260;
