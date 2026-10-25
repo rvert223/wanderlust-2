@@ -104,6 +104,7 @@ export async function analyzeScan(payload) {
   ], MAX_TOKENS.scan);
   const analysis = extractJson(reply);
   if (!analysis.identified_object) throw apiError('Muse reply has no identified_object');
+  console.log(`[muse] scan → ${analysis.identified_object} · hazard ${analysis.hazard_level} · confidence ${analysis.confidence} · from ${input.raw_visual_matches?.length ?? 0} Lens matches`);
   return analysis;
 }
 

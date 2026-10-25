@@ -123,7 +123,9 @@ async function lens(request, response) {
     const lensResponse = await fetch(search, { signal: AbortSignal.timeout(LENS_TIMEOUT_MS) });
     const result = await lensResponse.json();
     if (!lensResponse.ok || result.error) return sendJson(response, 502, { error: result.error || `SerpAPI answered ${lensResponse.status}` });
-    return sendJson(response, 200, trimLens(result));
+    const trimmed = trimLens(result);
+    console.log(`[lens] ${trimmed.visual_matches.length} matches · top: ${trimmed.visual_matches[0]?.title ?? '—'} · keys: ${Object.keys(result).join(',')}`);
+    return sendJson(response, 200, trimmed);
   } finally {
     await rm(file, { force: true });
   }
