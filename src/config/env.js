@@ -19,13 +19,12 @@ export const CONFIG = {
   serpapi: {
     lensUrl: read('SERPAPI_LENS_URL', '/api/serp/lens'),
   },
-  // Meta Muse: Muse Spark (scan analysis + narration agent) and Voice Transcribe.
+  // Meta Muse (Muse Spark + Voice Transcribe), reached through our own server (server/muse.js),
+  // which holds the Meta Model API key. These are routes on this site, not Meta URLs.
   muse: {
-    apiKey: read('MUSE_API_KEY'),
-    agentUrl: read('MUSE_AGENT_URL'),
-    // Optional separate endpoint for scan analysis; defaults to the agent URL.
-    scanUrl: isConfigured(read('MUSE_SCAN_URL')) ? read('MUSE_SCAN_URL') : read('MUSE_AGENT_URL'),
-    transcribeUrl: read('MUSE_TRANSCRIBE_URL'),
+    scanUrl: read('MUSE_SCAN_URL', '/api/muse/scan'),
+    narrateUrl: read('MUSE_NARRATE_URL', '/api/muse/narrate'),
+    transcribeUrl: read('MUSE_TRANSCRIBE_URL', '/api/muse/transcribe'),
   },
   // Facebook Graph API: place lookup and nearby community-verified experts.
   facebook: {

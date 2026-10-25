@@ -1,42 +1,55 @@
-// Wanderlust API server — the Google Lens bridge.
-// SerpAPI's Google Lens engine only accepts an image *URL*, never an upload. So:
+// Wanderlust API server — the bridge to SerpAPI Google Lens and Meta's Muse models.
+// Keeps every key on the server; the website only ever talks to /api/*.
+//
+// Google Lens — SerpAPI's Lens engine only accepts an image *URL*, never an upload. So:
 //   POST /api/serp/lens        body = the JPEG/PNG/WebP photo (raw bytes)
 //     1. saves it under a random, unguessable name
 //     2. asks SerpAPI Lens to look at  PUBLIC_BASE_URL/api/serp/uploads/<name>
 //     3. deletes the photo and returns the trimmed Lens results
 //   GET  /api/serp/uploads/<name>  serves a saved photo (only while a lookup is running)
-//   GET  /api/health               { ok, lensConfigured }
-// The SerpAPI key lives only here (never in the website). No dependencies: Node 20+.
 //
-// Env: SERPAPI_API_KEY, PUBLIC_BASE_URL (e.g. https://66-42-84-210.sslip.io), PORT (default 8787)
+// Muse (Meta Model API, see server/muse.js):
+//   POST /api/muse/scan        JSON scan payload        → the specimen analysis
+//   POST /api/muse/narrate     { event, context }       → { message }
+//   POST /api/muse/transcribe  recorded audio (bytes)   → { text }
+//   GET  /api/muse/test        one-word round trip to check the key
+//
+//   GET  /api/health           { ok, lensConfigured, museConfigured, museModel }
+// No dependencies: Node 20+.
+//
+// Env: SERPAPI_API_KEY, PUBLIC_BASE_URL (e.g. https://66-42-84-210.sslip.io), PORT (default 8787),
+//      MUSE_API_KEY (+ optional MUSE_MODEL, MUSE_TRANSCRIBE_MODEL, MUSE_BASE_URL)
 // Run: node --env-file=server/.env server/index.js
 import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
 import { mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import * as muse from './muse.js';
 
 const PORT = Number(process.env.PORT) || 8787;
 const SERPAPI_API_KEY = process.env.SERPAPI_API_KEY || '';
 const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || '').replace(/\/$/, '');
 const UPLOAD_DIR = join(dirname(fileURLToPath(import.meta.url)), 'uploads');
 const MAX_UPLOAD_BYTES = 6 * 1024 * 1024;
+const MAX_JSON_BYTES = 64 * 1024;
 const UPLOAD_TTL_MS = 10 * 60 * 1000; // safety sweep for photos a crashed lookup left behind
 const LENS_TIMEOUT_MS = 45_000;
 const TOP_MATCHES = 8;
-const LENS_LIMIT_PER_MINUTE = 6; // per visitor — every lookup spends a SerpAPI credit
+// Requests per visitor per minute — every call spends paid API credit.
+const LIMITS_PER_MINUTE = { lens: 6, muse: 20, transcribe: 10 };
 
 const lensConfigured = () => Boolean(SERPAPI_API_KEY && PUBLIC_BASE_URL);
 
 // Tiny in-memory rate limit, keyed by the visitor IP nginx forwards.
 const recentLookups = new Map();
-function overLimit(request) {
-  const ip = request.headers['x-real-ip'] || request.socket.remoteAddress;
+function overLimit(request, bucket) {
+  const key = `${bucket}:${request.headers['x-real-ip'] || request.socket.remoteAddress}`;
   const now = Date.now();
-  const times = (recentLookups.get(ip) || []).filter((time) => now - time < 60_000);
+  const times = (recentLookups.get(key) || []).filter((time) => now - time < 60_000);
   times.push(now);
-  recentLookups.set(ip, times);
-  return times.length > LENS_LIMIT_PER_MINUTE;
+  recentLookups.set(key, times);
+  return times.length > LIMITS_PER_MINUTE[bucket];
 }
 setInterval(() => recentLookups.clear(), 10 * 60_000).unref();
 
@@ -54,14 +67,14 @@ function sendJson(response, status, body) {
   response.end(JSON.stringify(body));
 }
 
-function readBody(request) {
+function readBody(request, maxBytes = MAX_UPLOAD_BYTES) {
   return new Promise((resolve, reject) => {
     const chunks = [];
     let size = 0;
     request.on('data', (chunk) => {
       size += chunk.length;
-      if (size > MAX_UPLOAD_BYTES) {
-        reject(Object.assign(new Error('Photo is larger than 6 MB'), { status: 413 }));
+      if (size > maxBytes) {
+        reject(Object.assign(new Error(`Upload is larger than ${Math.round(maxBytes / 1024)} KB`), { status: 413, expose: true }));
         request.destroy();
         return;
       }
@@ -87,7 +100,7 @@ function trimLens(result) {
 
 async function lens(request, response) {
   if (!lensConfigured()) return sendJson(response, 503, { error: 'Lens is not configured: set SERPAPI_API_KEY and PUBLIC_BASE_URL' });
-  if (overLimit(request)) return sendJson(response, 429, { error: 'Too many scans — wait a minute and try again' });
+  if (overLimit(request, 'lens')) return sendJson(response, 429, { error: 'Too many scans — wait a minute and try again' });
 
   const body = await readBody(request);
   const extension = imageExtension(body);
@@ -110,6 +123,22 @@ async function lens(request, response) {
   } finally {
     await rm(file, { force: true });
   }
+}
+
+async function readJson(request) {
+  try {
+    return JSON.parse((await readBody(request, MAX_JSON_BYTES)).toString('utf8'));
+  } catch (error) {
+    if (error.status) throw error;
+    throw Object.assign(new Error('Send a JSON body'), { status: 400, expose: true });
+  }
+}
+
+/** Muse routes: same guard (configured + rate limit), then the handler's result as JSON. */
+async function museRoute(request, response, bucket, handler) {
+  if (!muse.museConfigured()) return sendJson(response, 503, { error: 'Muse is not configured: set MUSE_API_KEY' });
+  if (overLimit(request, bucket)) return sendJson(response, 429, { error: 'Too many requests — wait a minute and try again' });
+  return sendJson(response, 200, await handler());
 }
 
 async function serveUpload(name, response) {
@@ -139,12 +168,21 @@ setInterval(sweepUploads, UPLOAD_TTL_MS).unref();
 createServer(async (request, response) => {
   const { pathname } = new URL(request.url, 'http://localhost');
   try {
-    if (request.method === 'GET' && pathname === '/api/health') return sendJson(response, 200, { ok: true, lensConfigured: lensConfigured() });
+    if (request.method === 'GET' && pathname === '/api/health') {
+      return sendJson(response, 200, { ok: true, lensConfigured: lensConfigured(), museConfigured: muse.museConfigured(), museModel: muse.museModel });
+    }
     if (request.method === 'POST' && pathname === '/api/serp/lens') return await lens(request, response);
+    if (request.method === 'POST' && pathname === '/api/muse/scan') return await museRoute(request, response, 'muse', async () => muse.analyzeScan(await readJson(request)));
+    if (request.method === 'POST' && pathname === '/api/muse/narrate') return await museRoute(request, response, 'muse', async () => muse.narrate(await readJson(request)));
+    if (request.method === 'POST' && pathname === '/api/muse/transcribe') {
+      return await museRoute(request, response, 'transcribe', async () => muse.transcribe(await readBody(request), request.headers['content-type']));
+    }
+    if (request.method === 'GET' && pathname === '/api/muse/test') return await museRoute(request, response, 'muse', () => muse.selfTest());
     if (request.method === 'GET' && pathname.startsWith('/api/serp/uploads/')) return await serveUpload(pathname.split('/').pop(), response);
     return sendJson(response, 404, { error: 'Not found' });
   } catch (error) {
-    console.error('[api]', error);
-    if (!response.headersSent) sendJson(response, error.status || 500, { error: error.status ? error.message : 'Server error' });
+    if (!error.expose || (error.status || 500) >= 500) console.error('[api]', error);
+    if (!response.headersSent) sendJson(response, error.status || 500, { error: error.expose ? error.message : 'Server error' });
   }
-}).listen(PORT, '127.0.0.1', () => console.log(`[api] listening on 127.0.0.1:${PORT} · lens ${lensConfigured() ? 'ready' : 'NOT configured'}`));
+}).listen(PORT, '127.0.0.1', () =>
+  console.log(`[api] listening on 127.0.0.1:${PORT} · lens ${lensConfigured() ? 'ready' : 'NOT configured'} · muse ${muse.museConfigured() ? `ready (${muse.museModel})` : 'NOT configured'}`));

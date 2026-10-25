@@ -1,9 +1,10 @@
 # Deploying Wanderlust on Vultr
 
 Vultr runs two things: nginx, which serves the built website, and a small Node API server
-(`server/index.js`) that bridges scans to SerpAPI Google Lens. Lens only accepts an image URL, so
-the server hosts each photo for the length of one lookup, then deletes it. The SerpAPI key lives
-only on the server. A free `sslip.io` address gives the site HTTPS, which phones require before
+(`server/index.js`) that bridges the app to SerpAPI Google Lens and Meta's Muse models (Muse Spark
+and Muse Voice Transcribe, through the Meta Model API). Lens only accepts an image URL, so the
+server hosts each photo for the length of one lookup, then deletes it. All keys live only on the
+server. A free `sslip.io` address gives the site HTTPS, which phones require before
 they allow the camera and microphone (and which Google Lens needs to fetch the photo).
 
 Takes about 10 minutes. The smallest Shared CPU plan with 2 GB RAM is enough.
@@ -21,8 +22,7 @@ Vultr → **Orchestration → Startup Scripts → Add Startup Script**
 ```bash
 #!/bin/bash
 SERPAPI_KEY=""        # Google Lens visual search (kept on the server only)
-MUSE_AGENT_URL=""     # Muse Spark endpoint (scan analysis + narration)
-MUSE_API_KEY=""
+MUSE_KEY=""           # Meta Model API key: Muse Spark + Voice Transcribe (kept on the server only)
 BRANCH="claude/tender-hopper-8bb32z"
 REPO="https://github.com/rvert223/wanderlust-2.git"
 
@@ -47,18 +47,17 @@ DOMAIN="${IP//./-}.sslip.io"
 git clone -b "$BRANCH" "$REPO" /opt/wanderlust
 cd /opt/wanderlust
 
-# Website settings (built into the site — never put the SerpAPI key here)
+# Website settings (built into the site — never put API keys here)
 cp .env.example .env
-[ -n "$MUSE_AGENT_URL" ] && sed -i "s|^VITE_MUSE_AGENT_URL=.*|VITE_MUSE_AGENT_URL=$MUSE_AGENT_URL|" .env
-[ -n "$MUSE_API_KEY" ] && sed -i "s|^VITE_MUSE_API_KEY=.*|VITE_MUSE_API_KEY=$MUSE_API_KEY|" .env
 npm ci
 npm run build
 
-# API server settings (private)
+# API server settings (private — this is where the keys live)
 cat > server/.env <<ENVFILE
 SERPAPI_API_KEY=$SERPAPI_KEY
 PUBLIC_BASE_URL=https://$DOMAIN
 PORT=8787
+MUSE_API_KEY=$MUSE_KEY
 ENVFILE
 chmod 600 server/.env
 mkdir -p server/uploads && chown www-data:www-data server/uploads
@@ -132,8 +131,26 @@ cd /opt/wanderlust && git pull && npm ci && npm run build && systemctl restart w
 
 - Website settings (`nano /opt/wanderlust/.env`, the `VITE_…` lines) are built into the site, so
   run the update line after editing them.
-- Server settings (`nano /opt/wanderlust/server/.env`, the SerpAPI key) only need
+- Server settings (`nano /opt/wanderlust/server/.env`, the SerpAPI and Muse keys) only need
   `systemctl restart wanderlust-api`.
+
+## Adding the Muse key to a running server
+
+```bash
+cd /opt/wanderlust && git pull && npm ci && npm run build
+grep -q '^MUSE_API_KEY=' server/.env || echo 'MUSE_API_KEY=' >> server/.env
+nano server/.env
+```
+
+Put your Meta Model API key after `MUSE_API_KEY=`, save (**Ctrl+O**, **Enter**, **Ctrl+X**), then:
+
+```bash
+systemctl restart wanderlust-api
+sleep 2 && curl -s http://127.0.0.1:8787/api/muse/test
+```
+
+`{"ok":true,"model":"muse-spark-1.3","reply":"ready"}` means Muse is connected. If it prints an
+error instead, `journalctl -u wanderlust-api -n 20 --no-pager` shows Meta's exact answer.
 
 ## Upgrading an existing server
 
@@ -230,9 +247,10 @@ firewall group without rules is linked to the server.
 
 ## Notes
 
-- The SerpAPI key stays on the server. `VITE_` values (the Muse key) end up inside the website
-  and anyone can read them — set a spending limit on that key.
-- Every scan costs one SerpAPI search. The server allows 6 scans per minute per visitor.
+- The SerpAPI and Muse keys stay on the server; the website never sees them. `VITE_` values are
+  built into the website, so never put a key there.
+- Every scan costs one SerpAPI search and one Muse call. Per visitor per minute the server allows
+  6 scans, 20 Muse calls and 10 voice transcriptions.
 - Without `VITE_API_BASE_URL`, accounts and posts are saved in each visitor's browser only.
 - Hackathon credit expires; delete the server afterwards (**Compute → Instances → Destroy**) so
   nothing is billed to the card on file.
