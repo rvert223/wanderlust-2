@@ -2,11 +2,10 @@
 // Screens read state and call actions; all network/storage work is delegated to services.
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { ALERT_RADIUS_KM, DEFAULT_CENTER, LOCATION } from '../config/app';
-import { placeAt } from '../connectors/facebookGraph';
 import { narrate } from '../connectors/muse';
 import { subscribeToAlerts } from '../services/alertService';
 import * as auth from '../services/authService';
-import { loadLocationMode, saveLocationMode, startLocationSource } from '../services/locationService';
+import { loadLocationMode, placeNameAt, saveLocationMode, startLocationSource } from '../services/locationService';
 import { loadUser, rankFor, saveUser } from '../services/profileService';
 import { createSighting, listSightings, voteOnSighting } from '../services/sightingsService';
 import { distanceKm } from '../utils/geo';
@@ -120,7 +119,7 @@ export function AppProvider({ children }) {
       if (lastPlaceCoords && metersBetween(lastPlaceCoords, reading.coords) < LOCATION.placeRefreshM) return;
       lastPlaceCoords = reading.coords;
       const lookup = ++placeLookup;
-      const placeName = await placeAt(reading.coords.lat, reading.coords.lng);
+      const placeName = await placeNameAt(reading.coords.lat, reading.coords.lng);
       if (!cancelled && lookup === placeLookup) setLocation((current) => ({ ...current, placeName }));
     });
 

@@ -115,7 +115,9 @@ mock if a call fails, so the demo never dies).
   re-checking, and Muse additionally flags AI-generated or re-photographed images. Demo frames (no camera) are marked `live: false` and show "Unverified capture".
 - **Location:** the browser's Geolocation API (no key) follows the device continuously; moves under
   25 m are ignored and the place name is only looked up again after 250 m (`LOCATION` in
-  `config/app.js`). For demos, the Profile tab switches to a fixed Austin demo location or a "demo walk"
+  `config/app.js`). Place names are real, from OpenStreetMap's free Nominatim lookup through
+  `server/places.js` (`GET /api/place`, cached, at most 1 request/second as Nominatim requires);
+  if that fails, Facebook Graph and then the nearest sample landmark are used. For demos, the Profile tab switches to a fixed Austin demo location or a "demo walk"
   that steps between them every 20 s (`src/data/demoLocations.js`); the map shows "· demo" meanwhile.
 - **Hazard alerts:** posting or receiving a sighting with hazard ≥ 3 within 5 km raises a toast with safety
   disclaimers. Offline, one incoming alert is simulated ~9 s after launch.

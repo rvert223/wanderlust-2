@@ -3,8 +3,12 @@
 //   'walk'      the demo walk: steps through DEMO_WALK, one stop every DEMO_WALK_STEP_MS
 //   <demo id>   a fixed demo location from data/demoLocations.js
 // The chosen source is remembered per device.
+// Place names: OpenStreetMap (real, via our server) first, then Facebook Graph, which itself falls
+// back to the nearest sample landmark when it isn't set up.
 import { DEMO_LOCATIONS, DEMO_WALK, DEMO_WALK_STEP_MS } from '../data/demoLocations';
+import { placeAt } from '../connectors/facebookGraph';
 import { watchLocation } from '../connectors/location';
+import { placesReady, reversePlace } from '../connectors/places';
 import { readJson, writeJson } from '../utils/storage';
 
 const MODE_KEY = 'wanderlust.location-mode.v1';
@@ -39,4 +43,16 @@ export function startLocationSource(mode, onPosition) {
     return () => {};
   }
   return watchLocation(onPosition);
+}
+
+/** The name of the place at these coordinates (see the order above). */
+export async function placeNameAt(latitude, longitude) {
+  if (placesReady()) {
+    try {
+      return await reversePlace(latitude, longitude);
+    } catch (error) {
+      console.warn('[places] OpenStreetMap lookup failed, trying Facebook / samples', error);
+    }
+  }
+  return placeAt(latitude, longitude);
 }

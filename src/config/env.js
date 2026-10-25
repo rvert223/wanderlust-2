@@ -26,6 +26,10 @@ export const CONFIG = {
     narrateUrl: read('MUSE_NARRATE_URL', '/api/muse/narrate'),
     transcribeUrl: read('MUSE_TRANSCRIBE_URL', '/api/muse/transcribe'),
   },
+  // Real place names for GPS coordinates (OpenStreetMap via our server, server/places.js).
+  places: {
+    url: read('PLACES_URL', '/api/place'),
+  },
   // Facebook Graph API: place lookup and nearby community-verified experts.
   facebook: {
     accessToken: read('FACEBOOK_ACCESS_TOKEN'),

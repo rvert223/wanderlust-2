@@ -14,6 +14,9 @@
 //   POST /api/muse/transcribe  recorded audio (bytes)   → { text }
 //   GET  /api/muse/test        one-word round trip to check the key
 //
+// Places (OpenStreetMap Nominatim, see server/places.js):
+//   GET  /api/place?lat=..&lng=..   → { name } — the real place name for GPS coordinates
+//
 //   GET  /api/health           { ok, lensConfigured, museConfigured, museModel }
 // No dependencies: Node 20+.
 //
@@ -26,6 +29,7 @@ import { mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as muse from './muse.js';
+import * as places from './places.js';
 
 const PORT = Number(process.env.PORT) || 8787;
 const SERPAPI_API_KEY = process.env.SERPAPI_API_KEY || '';
@@ -37,7 +41,7 @@ const UPLOAD_TTL_MS = 10 * 60 * 1000; // safety sweep for photos a crashed looku
 const LENS_TIMEOUT_MS = 45_000;
 const TOP_MATCHES = 8;
 // Requests per visitor per minute — every call spends paid API credit.
-const LIMITS_PER_MINUTE = { lens: 6, muse: 20, transcribe: 10 };
+const LIMITS_PER_MINUTE = { lens: 6, muse: 20, transcribe: 10, place: 30 };
 
 const lensConfigured = () => Boolean(SERPAPI_API_KEY && PUBLIC_BASE_URL);
 
@@ -166,7 +170,7 @@ async function sweepUploads() {
 setInterval(sweepUploads, UPLOAD_TTL_MS).unref();
 
 createServer(async (request, response) => {
-  const { pathname } = new URL(request.url, 'http://localhost');
+  const { pathname, searchParams } = new URL(request.url, 'http://localhost');
   try {
     if (request.method === 'GET' && pathname === '/api/health') {
       return sendJson(response, 200, { ok: true, lensConfigured: lensConfigured(), museConfigured: muse.museConfigured(), museModel: muse.museModel });
@@ -176,6 +180,10 @@ createServer(async (request, response) => {
     if (request.method === 'POST' && pathname === '/api/muse/narrate') return await museRoute(request, response, 'muse', async () => muse.narrate(await readJson(request)));
     if (request.method === 'POST' && pathname === '/api/muse/transcribe') {
       return await museRoute(request, response, 'transcribe', async () => muse.transcribe(await readBody(request), request.headers['content-type']));
+    }
+    if (request.method === 'GET' && pathname === '/api/place') {
+      if (overLimit(request, 'place')) return sendJson(response, 429, { error: 'Too many place lookups — wait a minute' });
+      return sendJson(response, 200, await places.reverse(Number(searchParams.get('lat')), Number(searchParams.get('lng'))));
     }
     if (request.method === 'GET' && pathname === '/api/muse/test') return await museRoute(request, response, 'muse', () => muse.selfTest());
     if (request.method === 'GET' && pathname.startsWith('/api/serp/uploads/')) return await serveUpload(pathname.split('/').pop(), response);
