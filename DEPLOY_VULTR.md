@@ -235,6 +235,21 @@ curl -s https://$DOMAIN/api/health
 `VITE_SERPAPI_API_KEY` / `VITE_GEMINI_API_KEY` lines in `/opt/wanderlust/.env` are no longer used
 and can be deleted.
 
+## Demo scan mode (always poison hemlock)
+
+For presenting while Google Lens is unavailable: every scan returns poison hemlock without calling
+SerpAPI. Muse still writes the identification, hazard level and spoken warning. Applies to everyone
+using the site; no rebuild needed.
+
+```bash
+# turn on
+cd /opt/wanderlust && sed -i '/^DEMO_SCAN=/d' server/.env && echo "DEMO_SCAN=poison-hemlock" >> server/.env && systemctl restart wanderlust-api
+# turn off (scan for real again)
+cd /opt/wanderlust && sed -i '/^DEMO_SCAN=/d' server/.env && systemctl restart wanderlust-api
+```
+
+`curl -s http://127.0.0.1:8787/api/health` shows `"demoScan":"poison-hemlock"` while it is on.
+
 ## When Meta blocks the server: relay Muse through a laptop
 
 Meta's Model API answers normal internet connections but, at the time of writing, **not cloud

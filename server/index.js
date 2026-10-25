@@ -50,6 +50,26 @@ const LIMITS_PER_MINUTE = { lens: 6, muse: 20, transcribe: 10, place: 30 };
 
 const lensConfigured = () => Boolean(SERPAPI_API_KEY && PUBLIC_BASE_URL);
 
+// Demo switch: DEMO_SCAN=poison-hemlock in server/.env makes every scan "see" poison hemlock without
+// calling SerpAPI (for presenting while Lens is down). Muse still writes the identification and warning.
+// Remove the line and restart to scan for real again.
+const DEMO_SCAN = (process.env.DEMO_SCAN || '').trim().toLowerCase();
+const DEMO_LENS = {
+  'poison-hemlock': {
+    visual_matches: [
+      { title: 'Poison hemlock (Conium maculatum) - Wikipedia', link: 'https://en.wikipedia.org/wiki/Conium_maculatum', source: 'Wikipedia',
+        snippet: 'Conium maculatum is a highly poisonous flowering plant in the carrot family, with hollow purple-blotched stems and umbrellas of small white flowers.' },
+      { title: 'Poisonous plants — Poison Control', link: 'https://www.poison.org/articles/plants', source: 'Poison Control' },
+      { title: 'Conium maculatum observations — iNaturalist', link: 'https://www.inaturalist.org/search?q=Conium%20maculatum', source: 'iNaturalist' },
+    ],
+    knowledge_graph: [{ title: 'Poison hemlock', subtitle: 'Flowering plant (Conium maculatum)' }],
+    suggested_titles: ['Poison hemlock', 'Conium maculatum'],
+    text_snippets: [],
+    ai_overview: 'This appears to be poison hemlock (Conium maculatum), a tall plant in the carrot family with hollow, purple-spotted stems and lacy white flower umbrellas. Every part is highly toxic if eaten.',
+  },
+};
+const demoLens = () => DEMO_LENS[DEMO_SCAN] || (DEMO_SCAN ? DEMO_LENS['poison-hemlock'] : null);
+
 // Tiny in-memory rate limit, keyed by the visitor IP nginx forwards.
 const recentLookups = new Map();
 function overLimit(request, bucket) {
@@ -156,6 +176,11 @@ async function searchLens(imageUrl, type, deadline) {
 }
 
 async function lens(request, response) {
+  if (demoLens()) {
+    await readBody(request); // take the photo, but don't send it anywhere
+    console.log(`[lens] demo mode (DEMO_SCAN=${DEMO_SCAN}): returning poison hemlock`);
+    return sendJson(response, 200, demoLens());
+  }
   if (!lensConfigured()) return sendJson(response, 503, { error: 'Lens is not configured: set SERPAPI_API_KEY and PUBLIC_BASE_URL' });
   if (overLimit(request, 'lens')) return sendJson(response, 429, { error: 'Too many scans — wait a minute and try again' });
 
@@ -231,7 +256,7 @@ createServer(async (request, response) => {
   const { pathname, searchParams } = new URL(request.url, 'http://localhost');
   try {
     if (request.method === 'GET' && pathname === '/api/health') {
-      return sendJson(response, 200, { ok: true, lensConfigured: lensConfigured(), museConfigured: muse.museConfigured(), museModel: muse.museModel });
+      return sendJson(response, 200, { ok: true, lensConfigured: lensConfigured(), museConfigured: muse.museConfigured(), museModel: muse.museModel, demoScan: DEMO_SCAN || false });
     }
     if (request.method === 'POST' && pathname === '/api/serp/lens') return await lens(request, response);
     if (request.method === 'POST' && pathname === '/api/muse/scan') return await museRoute(request, response, 'muse', async () => muse.analyzeScan(await readJson(request)));
@@ -251,4 +276,4 @@ createServer(async (request, response) => {
     if (!response.headersSent) sendJson(response, error.status || 500, { error: error.expose ? error.message : 'Server error' });
   }
 }).listen(PORT, '127.0.0.1', () =>
-  console.log(`[api] listening on 127.0.0.1:${PORT} · lens ${lensConfigured() ? 'ready' : 'NOT configured'} · muse ${muse.museConfigured() ? `ready (${muse.museModel})` : 'NOT configured'}`));
+  console.log(`[api] listening on 127.0.0.1:${PORT} · lens ${demoLens() ? `DEMO (${DEMO_SCAN})` : lensConfigured() ? 'ready' : 'NOT configured'} · muse ${muse.museConfigured() ? `ready (${muse.museModel})` : 'NOT configured'}`));
