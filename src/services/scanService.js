@@ -29,7 +29,7 @@ function toScanResult(analysis, lens, photo) {
     narration: analysis.audio_narrative_script || '',
     museImagePrompt: analysis.muse_image_prompt || '',
     research: {
-      summary: lens.matches[0]?.snippet || `Google Lens found ${lens.matches.length} close visual match${lens.matches.length === 1 ? '' : 'es'}.`,
+      summary: lens.matches[0]?.snippet || lens.overview.split(/(?<=\.)\s/)[0] || `Google Lens found ${lens.matches.length} close visual match${lens.matches.length === 1 ? '' : 'es'}.`,
       sources: lens.matches.filter((m) => m.link).map(({ title, link }) => ({ title, link })),
       images: lens.matches.map((m) => m.thumbnail).filter(Boolean),
     },

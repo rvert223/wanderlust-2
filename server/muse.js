@@ -25,6 +25,7 @@ const SCAN_SYSTEM_PROMPT =
   '"audio_narrative_script": string, "muse_image_prompt": string, "scientific_name": string, ' +
   '"category": "flora"|"fauna"|"wonder"|"ghost"|"sound", "confidence": 0-1, "summary": string, ' +
   '"dangers": string, "lookalikes": string[], "looks_ai_generated": boolean, "authenticity_note": string}\n' +
+  'lens_text may include Google\'s AI overview of the photo; treat it as strong evidence alongside the matches. ' +
   'If the matches disagree or are unclear, lower the confidence and treat the specimen as hazardous. ' +
   'Never call an uncertain plant, fungus or animal safe to touch or eat.';
 

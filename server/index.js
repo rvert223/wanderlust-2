@@ -4,7 +4,8 @@
 // Google Lens — SerpAPI's Lens engine only accepts an image *URL*, never an upload. So:
 //   POST /api/serp/lens        body = the JPEG/PNG/WebP photo (raw bytes)
 //     1. saves it under a random, unguessable name
-//     2. asks SerpAPI Lens to look at  PUBLIC_BASE_URL/api/serp/uploads/<name>
+//     2. asks SerpAPI Lens to look at  PUBLIC_BASE_URL/api/serp/uploads/<name> (visual matches, or
+//        Google's AI overview of the photo; retried for visual matches if it returns neither)
 //     3. deletes the photo and returns the trimmed Lens results
 //   GET  /api/serp/uploads/<name>  serves a saved photo (only while a lookup is running)
 //
@@ -33,6 +34,7 @@ import * as places from './places.js';
 
 const PORT = Number(process.env.PORT) || 8787;
 const SERPAPI_API_KEY = process.env.SERPAPI_API_KEY || '';
+const SERPAPI_URL = process.env.SERPAPI_URL || 'https://serpapi.com/search.json';
 const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || '').replace(/\/$/, '');
 const UPLOAD_DIR = join(dirname(fileURLToPath(import.meta.url)), 'uploads');
 const MAX_UPLOAD_BYTES = 6 * 1024 * 1024;
@@ -97,9 +99,31 @@ function trimLens(result) {
   const knowledge = (result.knowledge_graph || []).slice(0, 3).map(({ title, subtitle, link, images }) => ({
     title, subtitle, link, image: images?.[0]?.source || images?.[0]?.link,
   }));
-  const suggestedTitles = [...new Set([...knowledge.map((k) => k.title), ...matches.map((m) => m.title)].filter(Boolean))].slice(0, 5);
+  // Google sometimes answers with an "AI overview" (a written summary + source links) instead of
+  // visual matches. Keep its text, and use its sources as the matches when there are none.
+  const overview = result.ai_overview || {};
+  const overviewText = (overview.text_blocks || [])
+    .flatMap((block) => [block.snippet, ...(block.list || []).map((item) => [item.title, item.snippet].filter(Boolean).join(': '))])
+    .filter(Boolean).join(' ').slice(0, 1500);
+  const references = (overview.references || []).slice(0, TOP_MATCHES).map(({ title, link, snippet, source }) => ({ title, link, source, snippet }));
+  const bestMatches = matches.length ? matches : references;
+
+  const suggestedTitles = [...new Set([...knowledge.map((k) => k.title), ...bestMatches.map((m) => m.title)].filter(Boolean))].slice(0, 5);
   const textSnippets = (result.text_results || []).slice(0, 5).map((t) => t.text).filter(Boolean);
-  return { visual_matches: matches, knowledge_graph: knowledge, suggested_titles: suggestedTitles, text_snippets: textSnippets };
+  return { visual_matches: bestMatches, knowledge_graph: knowledge, suggested_titles: suggestedTitles, text_snippets: textSnippets, ai_overview: overviewText };
+}
+
+/** One SerpAPI Google Lens search for a photo URL. `type` narrows it (e.g. 'visual_matches'). */
+async function searchLens(imageUrl, type) {
+  const search = new URL(SERPAPI_URL);
+  search.searchParams.set('engine', 'google_lens');
+  search.searchParams.set('url', imageUrl);
+  if (type) search.searchParams.set('type', type);
+  search.searchParams.set('api_key', SERPAPI_API_KEY);
+  const lensResponse = await fetch(search, { signal: AbortSignal.timeout(LENS_TIMEOUT_MS) });
+  const result = await lensResponse.json();
+  if (!lensResponse.ok || result.error) throw Object.assign(new Error(result.error || `SerpAPI answered ${lensResponse.status}`), { status: 502, expose: true });
+  return result;
 }
 
 async function lens(request, response) {
@@ -116,15 +140,15 @@ async function lens(request, response) {
   await writeFile(file, body);
 
   try {
-    const search = new URL('https://serpapi.com/search.json');
-    search.searchParams.set('engine', 'google_lens');
-    search.searchParams.set('url', `${PUBLIC_BASE_URL}/api/serp/uploads/${name}`);
-    search.searchParams.set('api_key', SERPAPI_API_KEY);
-    const lensResponse = await fetch(search, { signal: AbortSignal.timeout(LENS_TIMEOUT_MS) });
-    const result = await lensResponse.json();
-    if (!lensResponse.ok || result.error) return sendJson(response, 502, { error: result.error || `SerpAPI answered ${lensResponse.status}` });
-    const trimmed = trimLens(result);
-    console.log(`[lens] ${trimmed.visual_matches.length} matches · top: ${trimmed.visual_matches[0]?.title ?? '—'} · keys: ${Object.keys(result).join(',')}`);
+    const imageUrl = `${PUBLIC_BASE_URL}/api/serp/uploads/${name}`;
+    let result = await searchLens(imageUrl);
+    let trimmed = trimLens(result);
+    // Neither matches nor an overview: ask once more, for visual matches only (one extra search).
+    if (!trimmed.visual_matches.length && !trimmed.ai_overview) {
+      result = await searchLens(imageUrl, 'visual_matches');
+      trimmed = trimLens(result);
+    }
+    console.log(`[lens] ${trimmed.visual_matches.length} matches · top: ${trimmed.visual_matches[0]?.title ?? '—'} · overview: ${trimmed.ai_overview ? 'yes' : 'no'} · keys: ${Object.keys(result).join(',')}`);
     return sendJson(response, 200, trimmed);
   } finally {
     await rm(file, { force: true });
