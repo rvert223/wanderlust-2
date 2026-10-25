@@ -1,17 +1,20 @@
 // Camera connector — LIVE capture only.
-// Anti-fake policy: there is deliberately NO file-upload path anywhere in the app. Every photo
-// is drawn from the live <video> stream and stamped with a "proof" (time, GPS, SHA-256) that a
-// backend can re-check. Demo frames (no camera) are flagged `live: false` and can't be verified.
+// Anti-fake policy: there is deliberately NO file-upload path anywhere in the app (no file
+// picker, no <input type="file">). Every photo is drawn from the live rear-camera stream and
+// stamped by generateProofStamp(): SHA-256 of [timestamp + frozen GPS + blob size] that a backend
+// can re-check. Demo frames (no camera) are forced to `live: false` and flagged "Unverified capture".
 import { CONFIG } from '../../config/env';
 
 const MAX_WIDTH = 720;
 
 export async function openCamera() {
   if (!navigator.mediaDevices?.getUserMedia) throw new Error('Camera requires HTTPS or localhost');
-  return navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }, audio: false });
+  return navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 } }, audio: false });
 }
 
 export const stopCamera = (stream) => stream?.getTracks().forEach((track) => track.stop());
+
+const UNVERIFIED_FLAG = 'Unverified capture';
 
 async function sha256(text) {
   if (!crypto.subtle) return null;
@@ -19,10 +22,27 @@ async function sha256(text) {
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
-/** Packages a canvas into { id, dataUrl, proof } — the shape the scan pipeline expects. */
+const canvasToBlob = (canvas) => new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.72));
+
+/**
+ * Freezes the capture time and GPS, then signs SHA-256(timestamp|lat,lng|blobSize).
+ * Pass `live: false` for anything that did not come from the live camera stream.
+ * @returns {{ frameBlob: Blob, signature: string|null, live: boolean, capturedAt: number, coords: object, flags: string[] }}
+ */
+export async function generateProofStamp(frameBlob, coords, { live = true } = {}) {
+  const capturedAt = Date.now();
+  const frozen = coords ? { lat: coords.lat, lng: coords.lng } : null;
+  const location = frozen ? `${frozen.lat.toFixed(6)},${frozen.lng.toFixed(6)}` : 'no-gps';
+  const signature = await sha256(`${capturedAt}|${location}|${frameBlob.size}`);
+  return { frameBlob, signature, live, capturedAt, coords: frozen, flags: live ? [] : [UNVERIFIED_FLAG] };
+}
+
+/** Packages a canvas into { id, dataUrl, blob, proof } — the shape the scan pipeline expects. */
 async function packageFrame(canvas, coords, live) {
-  const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
-  return { id: Date.now(), dataUrl, proof: { live, capturedAt: Date.now(), coords, hash: await sha256(dataUrl) } };
+  const blob = await canvasToBlob(canvas);
+  const { frameBlob, ...stamp } = await generateProofStamp(blob, coords, { live });
+  // `hash` mirrors `signature` for code written against the earlier proof shape.
+  return { id: stamp.capturedAt, dataUrl: canvas.toDataURL('image/jpeg', 0.72), blob: frameBlob, proof: { ...stamp, hash: stamp.signature } };
 }
 
 /** Grabs the current video frame (downscaled to keep storage small). */

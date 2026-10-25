@@ -21,10 +21,12 @@ export const DEMO_ALERT_DELAY_MS = 9000;
 // The "Fear Frequency" detector (Hz and dB).
 export const INFRASOUND = {
   targetHz: 18.9,
-  bandHz: 1.5, // ± window around the target treated as "the fear band"
+  bandHz: 1.5, // ± window highlighted as "the fear band" on the spectrum gauge
   maxHz: 40, // upper edge of the spectrum we display
-  minBaselineHz: 4, // ignore DC rumble below this when computing the baseline
-  spikeDeltaDb: 12, // target-band peak must beat the baseline by this much
+  noiseFloorHz: [30, 60], // ambient noise floor = average of the bins in this range
+  spikeDeltaDb: 12, // the 18.9 Hz bin must beat the noise floor by this much
+  fftSize: 32768, // the AnalyserNode maximum: ~1.465 Hz per bin at 48 kHz
+  testToneGain: 0.05, // test-tone level fed into the analyser
   cooldownMs: 12000, // minimum gap between Muse warnings
 };
 

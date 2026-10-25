@@ -1,0 +1,16 @@
+# systemd unit for the Wanderlust API server (Google Lens bridge).
+# Install: cp server/wanderlust-api.service /etc/systemd/system/ && systemctl enable --now wanderlust-api
+[Unit]
+Description=Wanderlust API (Google Lens bridge)
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/wanderlust
+EnvironmentFile=/opt/wanderlust/server/.env
+ExecStart=/usr/bin/node server/index.js
+Restart=always
+User=www-data
+Group=www-data
+
+[Install]
+WantedBy=multi-user.target

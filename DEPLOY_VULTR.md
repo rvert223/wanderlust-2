@@ -1,22 +1,28 @@
 # Deploying Wanderlust on Vultr
 
-The app is a static site: Vultr runs nginx, which serves the built files and forwards SerpAPI
-requests (SerpAPI blocks direct browser calls). A free `sslip.io` address gives it HTTPS, which
-phones require before they allow the camera and microphone.
+Vultr runs two things: nginx, which serves the built website, and a small Node API server
+(`server/index.js`) that bridges scans to SerpAPI Google Lens. Lens only accepts an image URL, so
+the server hosts each photo for the length of one lookup, then deletes it. The SerpAPI key lives
+only on the server. A free `sslip.io` address gives the site HTTPS, which phones require before
+they allow the camera and microphone (and which Google Lens needs to fetch the photo).
 
-Takes about 10 minutes. Cost: the smallest Shared CPU plan with 2 GB RAM is enough.
+Takes about 10 minutes. The smallest Shared CPU plan with 2 GB RAM is enough.
+
+> Already have a server running from the earlier version of this guide? Skip to
+> [Upgrading an existing server](#upgrading-an-existing-server).
 
 ## 1. Save the startup script
 
 Vultr → **Orchestration → Startup Scripts → Add Startup Script**
 - Name: `wanderlust`, Type: **Boot**
-- Paste the script below. Put your keys between the quotes at the top. Leave a key empty to use
-  the app's built-in demo data for that feature (empty Gemini = demo identification).
+- Paste the script below and fill in the values at the top. Leave any of them empty to use the
+  app's built-in demo data for that feature.
 
 ```bash
 #!/bin/bash
-GEMINI_KEY=""
-SERPAPI_KEY=""
+SERPAPI_KEY=""        # Google Lens visual search (kept on the server only)
+MUSE_AGENT_URL=""     # Muse Spark endpoint (scan analysis + narration)
+MUSE_API_KEY=""
 BRANCH="claude/tender-hopper-8bb32z"
 REPO="https://github.com/rvert223/wanderlust-2.git"
 
@@ -34,28 +40,48 @@ apt-get install -y nodejs
 ufw allow 'Nginx Full' || true
 ufw allow OpenSSH || true
 
-git clone -b "$BRANCH" "$REPO" /opt/wanderlust
-cd /opt/wanderlust
-cp .env.example .env
-[ -n "$GEMINI_KEY" ] && sed -i "s|^VITE_GEMINI_API_KEY=.*|VITE_GEMINI_API_KEY=$GEMINI_KEY|" .env
-[ -n "$SERPAPI_KEY" ] && sed -i "s|^VITE_SERPAPI_API_KEY=.*|VITE_SERPAPI_API_KEY=$SERPAPI_KEY|" .env
-npm ci
-npm run build
-
 # The sslip.io name for this server, e.g. 66.42.84.210 -> 66-42-84-210.sslip.io
 IP=$(hostname -I | awk '{print $1}')
 DOMAIN="${IP//./-}.sslip.io"
 
-# server_name must be the real domain, or certbot cannot install the certificate.
-cat > /etc/nginx/sites-available/default <<EOF
+git clone -b "$BRANCH" "$REPO" /opt/wanderlust
+cd /opt/wanderlust
+
+# Website settings (built into the site — never put the SerpAPI key here)
+cp .env.example .env
+[ -n "$MUSE_AGENT_URL" ] && sed -i "s|^VITE_MUSE_AGENT_URL=.*|VITE_MUSE_AGENT_URL=$MUSE_AGENT_URL|" .env
+[ -n "$MUSE_API_KEY" ] && sed -i "s|^VITE_MUSE_API_KEY=.*|VITE_MUSE_API_KEY=$MUSE_API_KEY|" .env
+npm ci
+npm run build
+
+# API server settings (private)
+cat > server/.env <<ENVFILE
+SERPAPI_API_KEY=$SERPAPI_KEY
+PUBLIC_BASE_URL=https://$DOMAIN
+PORT=8787
+ENVFILE
+chmod 600 server/.env
+mkdir -p server/uploads && chown www-data:www-data server/uploads
+cp server/wanderlust-api.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now wanderlust-api
+
+# nginx: the website, plus /api/ to the API server. server_name must be the real domain,
+# or certbot cannot install the certificate.
+cat > /etc/nginx/sites-available/default <<NGINX
 server {
   listen 80 default_server;
   server_name $DOMAIN;
   root /opt/wanderlust/dist;
+  client_max_body_size 8m;
   location / { try_files \$uri /index.html; }
-  location /proxy/serpapi/ { proxy_pass https://serpapi.com/; proxy_ssl_server_name on; }
+  location /api/ {
+    proxy_pass http://127.0.0.1:8787;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_read_timeout 60s;
+  }
 }
-EOF
+NGINX
 nginx -t
 systemctl reload nginx
 
@@ -101,10 +127,75 @@ Use dashes, not dots: the certificate is issued for the dashed name.
 
 ```bash
 ssh root@<your-ip>
-cd /opt/wanderlust && git pull && npm run build
+cd /opt/wanderlust && git pull && npm ci && npm run build && systemctl restart wanderlust-api
 ```
 
-Run the same after editing keys (`nano /opt/wanderlust/.env`) — keys are built into the site.
+- Website settings (`nano /opt/wanderlust/.env`, the `VITE_…` lines) are built into the site, so
+  run the update line after editing them.
+- Server settings (`nano /opt/wanderlust/server/.env`, the SerpAPI key) only need
+  `systemctl restart wanderlust-api`.
+
+## Upgrading an existing server
+
+For a server set up with the earlier version of this guide (website only, no API server). Log in
+with `ssh root@<your-ip>` and run these one block at a time.
+
+**1. Get the new code and build it:**
+
+```bash
+cd /opt/wanderlust && git pull && npm ci && npm run build
+```
+
+**2. Create the API server's settings file:**
+
+```bash
+cp server/.env.example server/.env && nano server/.env
+```
+
+Put your SerpAPI key after `SERPAPI_API_KEY=` and your site address after `PUBLIC_BASE_URL=`
+(for example `https://66-42-84-210.sslip.io`). Save with **Ctrl+O**, **Enter**, **Ctrl+X**.
+
+**3. Start the API server:**
+
+```bash
+chmod 600 server/.env
+mkdir -p server/uploads && chown www-data:www-data server/uploads
+cp server/wanderlust-api.service /etc/systemd/system/
+systemctl daemon-reload && systemctl enable --now wanderlust-api
+curl -s http://127.0.0.1:8787/api/health
+```
+
+The last line should print `{"ok":true,"lensConfigured":true}`.
+
+**4. Route `/api/` through nginx.** Open the nginx settings (certbot's HTTPS lines in this file
+stay as they are):
+
+```bash
+nano /etc/nginx/sites-available/default
+```
+
+Inside **each** `server { … }` block that contains `root /opt/wanderlust/dist;`, delete the
+`location /proxy/serpapi/ { … }` line if it is there, and add:
+
+```nginx
+  client_max_body_size 8m;
+  location /api/ {
+    proxy_pass http://127.0.0.1:8787;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_read_timeout 60s;
+  }
+```
+
+Save, then:
+
+```bash
+nginx -t && systemctl reload nginx
+curl -s https://<your-ip-with-dashes>.sslip.io/api/health
+```
+
+If that prints `{"ok":true,"lensConfigured":true}`, scans now use Google Lens. Any old
+`VITE_SERPAPI_API_KEY` / `VITE_GEMINI_API_KEY` lines in `/opt/wanderlust/.env` are no longer used
+and can be deleted.
 
 ## Troubleshooting
 
@@ -112,13 +203,21 @@ Log in with `ssh root@<your-ip>` (password: the server's Overview page in Vultr;
 while you type it), then:
 
 ```bash
-cloud-init status          # "running" = still setting up, "done" = finished
-tail -30 /root/setup.log   # what the script did and where it stopped
+cloud-init status                     # "running" = still setting up, "done" = finished
+tail -30 /root/setup.log              # what the script did and where it stopped
 cat /root/wanderlust-url.txt
+systemctl status wanderlust-api       # is the API server running?
+journalctl -u wanderlust-api -n 30    # its recent log (Lens errors show up here)
+curl -s http://127.0.0.1:8787/api/health
 ```
 
-**"Could not automatically find a matching server block"** (servers made with the earlier script,
-which used `server_name _;`):
+**Scans always show the same few demo species** — Lens isn't being reached. Check that
+`/api/health` says `"lensConfigured":true`, and that `PUBLIC_BASE_URL` in `server/.env` is the
+site's `https://…sslip.io` address (Google downloads the photo from there). Then
+`systemctl restart wanderlust-api`.
+
+**"Could not automatically find a matching server block"** (servers made with the first version of
+the script, which used `server_name _;`):
 
 ```bash
 sed -i 's/server_name _;/server_name YOUR-IP-WITH-DASHES.sslip.io;/' /etc/nginx/sites-available/default
@@ -131,8 +230,9 @@ firewall group without rules is linked to the server.
 
 ## Notes
 
-- `VITE_` keys end up inside the website and anyone can read them. Set spending limits on the
-  Gemini and SerpAPI keys.
+- The SerpAPI key stays on the server. `VITE_` values (the Muse key) end up inside the website
+  and anyone can read them — set a spending limit on that key.
+- Every scan costs one SerpAPI search. The server allows 6 scans per minute per visitor.
 - Without `VITE_API_BASE_URL`, accounts and posts are saved in each visitor's browser only.
 - Hackathon credit expires; delete the server afterwards (**Compute → Instances → Destroy**) so
   nothing is billed to the card on file.

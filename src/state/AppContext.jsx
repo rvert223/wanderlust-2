@@ -28,6 +28,7 @@ export function AppProvider({ children }) {
   const [profileId, setProfileId] = useState(null); // person shown in the profile sheet
   const [toasts, setToasts] = useState([]);
   const [session, setSession] = useState(auth.loadSession); // signed-in account, or null
+  const [lastInfrasound, setLastInfrasound] = useState(null); // latest 18.9 Hz spike: { hz, deltaDb, at }
 
   // ---- UI actions -------------------------------------------------------
   const navigate = (next) => {
@@ -83,7 +84,7 @@ export function AppProvider({ children }) {
     listSightings().then(setSightings);
     getCurrentPosition().then(async ({ coords, approximate }) => {
       setLocation((current) => ({ ...current, coords, approximate }));
-      const placeName = await placeAt(coords);
+      const placeName = await placeAt(coords.lat, coords.lng);
       setLocation((current) => ({ ...current, placeName }));
     });
   }, []);
@@ -117,7 +118,7 @@ export function AppProvider({ children }) {
   const value = {
     route, navigate, location, sightings, user, draft, setDraft, selectedId, setSelectedId,
     profileId, openProfile: setProfileId, toasts, notify, dismissToast, updateUser, bumpStat, postSighting, vote,
-    session, signUp, logIn, signOut,
+    session, signUp, logIn, signOut, lastInfrasound, recordInfrasound: setLastInfrasound,
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

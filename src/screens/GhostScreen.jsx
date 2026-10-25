@@ -22,7 +22,7 @@ const LOG_LIMIT = 20;
 const VOICE_CLIP_MS = 4000;
 
 export default function GhostScreen() {
-  const { sightings, location, notify, postSighting, setSelectedId, navigate } = useApp();
+  const { sightings, location, notify, postSighting, setSelectedId, navigate, recordInfrasound } = useApp();
   const { frame, listening, micAvailable, start, stop } = useInfrasound();
   const [log, setLog] = useState([{ id: 0, who: 'investigator', text: 'Light a candle and press Listen. I will tell you when the veil grows thin.' }]);
   const [lastSpike, setLastSpike] = useState(null);
@@ -41,6 +41,7 @@ export default function GhostScreen() {
     if (!spiking || Date.now() - lastWarning.current < INFRASOUND.cooldownMs) return;
     lastWarning.current = Date.now();
     setLastSpike({ deltaDb: frame.deltaDb });
+    recordInfrasound({ hz: INFRASOUND.targetHz, deltaDb: frame.deltaDb, at: Date.now() });
     narrate('infrasound_spike', { deltaDb: frame.deltaDb }).then(say);
     navigator.vibrate?.([200, 100, 200]);
     reportSpike({ coords: location.coords, hz: INFRASOUND.targetHz, deltaDb: frame.deltaDb });

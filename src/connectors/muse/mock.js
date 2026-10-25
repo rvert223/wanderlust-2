@@ -1,4 +1,6 @@
-// Offline stand-in for Muse: one in-character template per event, plus a canned transcript.
+// Offline stand-in for Muse: one in-character template per event, a canned transcript, and a scan
+// analysis that recognises the demo specimens (anything else is treated as unknown and risky).
+import { DEMO_SPECIMENS } from '../../data/specimens';
 const TEMPLATES = {
   infrasound_spike: ({ deltaDb }) =>
     `The ambient infrasound just spiked ${Math.round(deltaDb)} dB near the fear frequency. Stay alert — you're entering a highly active zone.`,
@@ -24,4 +26,49 @@ export async function narrateMock(event, context) {
 export async function transcribeMock() {
   await new Promise((resolve) => setTimeout(resolve, 600));
   return 'is somebody there';
+}
+
+const hazardLine = (name, hazard) =>
+  hazard >= 3
+    ? `Careful, traveller. That ${name} brews a ${hazard >= 5 ? 'draught of doom' : 'bitter draught'}. Keep your hands in your pockets and warn the others.`
+    : `A gentle find! ${name} is little danger to a wanderer — but a true alchemist still washes their hands.`;
+
+export async function analyzeScanMock({ raw_visual_matches: matches = [], lens_text: lensText = '' }) {
+  await new Promise((resolve) => setTimeout(resolve, 900));
+  const haystack = `${lensText}\n${matches.map((m) => m.title).join('\n')}`.toLowerCase();
+  const known = DEMO_SPECIMENS.find((s) => haystack.includes(s.name.toLowerCase()) || haystack.includes(s.scientificName.toLowerCase()));
+
+  if (known) {
+    return {
+      identified_object: known.name,
+      scientific_name: known.scientificName,
+      category: known.category,
+      hazard_level: known.hazard,
+      confidence: known.confidence,
+      summary: known.summary,
+      dangers: known.dangers,
+      lookalikes: known.lookalikes,
+      looks_ai_generated: false,
+      authenticity_note: 'Natural lighting, sensor noise and depth of field are consistent with a real live capture.',
+      audio_narrative_script: hazardLine(known.name, known.hazard),
+      muse_image_prompt: `A field-guide plate of ${known.name} (${known.scientificName}), ink and watercolour, potion-label border`,
+    };
+  }
+
+  // Muse is offline and Lens found something we don't know: never call it safe.
+  const best = matches[0]?.title || 'Unknown specimen';
+  return {
+    identified_object: best,
+    scientific_name: '',
+    category: 'flora',
+    hazard_level: 3,
+    confidence: 0.3,
+    summary: `Google Lens's closest match is "${best}". Muse is offline, so this identification has not been checked.`,
+    dangers: 'Hazard not assessed. Treat it as dangerous until an expert confirms.',
+    lookalikes: matches.slice(1, 3).map((m) => m.title).filter(Boolean),
+    looks_ai_generated: false,
+    authenticity_note: 'Authenticity not checked (Muse offline).',
+    audio_narrative_script: `I can't be sure what this is, traveller. Until a guide confirms it, keep your hands to yourself.`,
+    muse_image_prompt: '',
+  };
 }

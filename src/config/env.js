@@ -15,27 +15,22 @@ export const CONFIG = {
     baseUrl: read('API_BASE_URL'),
     alertsWsUrl: read('ALERTS_WS_URL'),
   },
-  // Google Gemini: identifies the photographed plant/creature and flags synthetic images.
-  gemini: {
-    apiKey: read('GEMINI_API_KEY'),
-    baseUrl: read('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
-    model: read('GEMINI_MODEL', 'gemini-2.5-flash'),
-  },
-  // SerpAPI: web research on the identified species (routed via the Vite proxy in dev).
+  // SerpAPI Google Lens, reached through our own server (server/index.js), which keeps the key.
   serpapi: {
-    apiKey: read('SERPAPI_API_KEY'),
-    baseUrl: read('SERPAPI_BASE_URL', '/proxy/serpapi'),
+    lensUrl: read('SERPAPI_LENS_URL', '/api/serp/lens'),
   },
-  // Meta Muse: the Paranormal Investigator agent and Voice Transcribe.
+  // Meta Muse: Muse Spark (scan analysis + narration agent) and Voice Transcribe.
   muse: {
     apiKey: read('MUSE_API_KEY'),
     agentUrl: read('MUSE_AGENT_URL'),
+    // Optional separate endpoint for scan analysis; defaults to the agent URL.
+    scanUrl: isConfigured(read('MUSE_SCAN_URL')) ? read('MUSE_SCAN_URL') : read('MUSE_AGENT_URL'),
     transcribeUrl: read('MUSE_TRANSCRIBE_URL'),
   },
   // Facebook Graph API: place lookup and nearby community-verified experts.
   facebook: {
     accessToken: read('FACEBOOK_ACCESS_TOKEN'),
-    baseUrl: read('FACEBOOK_BASE_URL', 'https://graph.facebook.com/v19.0'),
+    baseUrl: read('FACEBOOK_BASE_URL', 'https://graph.facebook.com/v22.0'),
     nearbyExpertsPath: read('FACEBOOK_NEARBY_EXPERTS_PATH'),
   },
   // Optional Python (scipy/librosa) service that double-checks infrasound spikes.

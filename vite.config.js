@@ -1,8 +1,9 @@
 // Vite build/dev configuration.
 // - `host: true` exposes the dev server on the LAN so a phone can open the app.
-// - SerpAPI sends no CORS headers, so browser calls go through this dev proxy
-//   (/proxy/serpapi/* -> https://serpapi.com/*). In production, point
-//   VITE_SERPAPI_BASE_URL at your own backend proxy instead.
+// - /api/* goes to the Wanderlust API server (server/index.js, `npm run server`) on port 8787,
+//   the same way nginx routes it in production. Google Lens can only fetch the photo from a
+//   public HTTPS address, so real Lens results need the deployed server; locally the scan
+//   falls back to demo data.
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -11,11 +12,7 @@ export default defineConfig({
   server: {
     host: true,
     proxy: {
-      '/proxy/serpapi': {
-        target: 'https://serpapi.com',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/proxy\/serpapi/, ''),
-      },
+      '/api': 'http://127.0.0.1:8787',
     },
   },
 });

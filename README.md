@@ -33,14 +33,14 @@ key is set.
 
 | Feature | Put the key / link in `.env` | Connector file to edit (if needed) | Used by |
 | --- | --- | --- | --- |
-| **Gemini** — identify the photo, hazard level, "is it AI-generated?" check | `VITE_GEMINI_API_KEY`, `VITE_GEMINI_MODEL` | [`src/connectors/gemini/index.js`](src/connectors/gemini/index.js) (the prompt is at the top of this file) | Scan screen via `src/services/scanService.js` |
-| **SerpAPI** — species research, sources, images | `VITE_SERPAPI_API_KEY` (production: also `VITE_SERPAPI_BASE_URL`) | [`src/connectors/serpapi/index.js`](src/connectors/serpapi/index.js) · dev CORS proxy: [`vite.config.js`](vite.config.js) | Scan screen via `src/services/scanService.js` |
-| **Muse Agent** — the Paranormal Investigator's spoken lines (spikes, scan results, alerts, bios, verification pings) | `VITE_MUSE_AGENT_URL`, `VITE_MUSE_API_KEY` | [`src/connectors/muse/index.js`](src/connectors/muse/index.js) → `narrate()` · wording of the offline lines: [`muse/mock.js`](src/connectors/muse/mock.js) | Haunts screen, Scan, profile bios, hazard alerts, Circle verification messages |
+| **SerpAPI Google Lens** — visual search on the live photo (step 1 of a scan) | `SERPAPI_API_KEY` and `PUBLIC_BASE_URL` in **`server/.env`** (never in the website). Optional `VITE_SERPAPI_LENS_URL` (default `/api/serp/lens`) | Server: [`server/index.js`](server/index.js) · browser side: [`src/connectors/serpapi/index.js`](src/connectors/serpapi/index.js) → `visualSearch()` | Scan screen via [`src/services/scanService.js`](src/services/scanService.js) → `executeFullScanPipeline()` |
+| **Muse Spark** — identifies the specimen from the Lens data, hazard 0–5, AI-image check, spoken warning (step 2 of a scan) | `VITE_MUSE_AGENT_URL` (or a separate `VITE_MUSE_SCAN_URL`), `VITE_MUSE_API_KEY` | [`src/connectors/muse/index.js`](src/connectors/muse/index.js) → `analyzeScan()` (system prompt + reply format at the top) | Scan screen via `scanService.js` |
+| **Muse Agent** — the Paranormal Investigator's spoken lines (spikes, alerts, verification pings) | `VITE_MUSE_AGENT_URL`, `VITE_MUSE_API_KEY` | [`src/connectors/muse/index.js`](src/connectors/muse/index.js) → `narrate()` · wording of the offline lines: [`muse/mock.js`](src/connectors/muse/mock.js) | Haunts screen, hazard alerts, verification messages |
 | **Muse Voice Transcribe** — the 🎙️ Ask button on Haunts | `VITE_MUSE_TRANSCRIBE_URL`, `VITE_MUSE_API_KEY` | [`src/connectors/muse/index.js`](src/connectors/muse/index.js) → `transcribe()` and `recordClip()` | [`src/screens/GhostScreen.jsx`](src/screens/GhostScreen.jsx) |
 | **Fear Frequency (18.9 Hz)** — detection settings | *(no key)* | Thresholds (target Hz, spike dB, cooldown): [`src/config/app.js`](src/config/app.js) → `INFRASOUND` · FFT maths: [`src/connectors/infrasound/analyzer.js`](src/connectors/infrasound/analyzer.js) | Haunts screen |
 | **Python infrasound service** (scipy/librosa second opinion, optional) | `VITE_INFRASOUND_BACKEND_URL` | [`src/connectors/infrasound/index.js`](src/connectors/infrasound/index.js) → `reportSpike()` | Haunts screen |
-| **Facebook Graph — place name from location** | `VITE_FACEBOOK_ACCESS_TOKEN` (optional `VITE_FACEBOOK_BASE_URL`) | [`src/connectors/facebookGraph/index.js`](src/connectors/facebookGraph/index.js) → `placeAt()` | `src/state/AppContext.jsx` (every post is stacked under its place) |
-| **Facebook Graph — nearby verified experts + verification requests** | `VITE_FACEBOOK_ACCESS_TOKEN`, `VITE_FACEBOOK_NEARBY_EXPERTS_PATH` | [`src/connectors/facebookGraph/index.js`](src/connectors/facebookGraph/index.js) → `findNearbyExperts()`, `requestVerification()` | Posting a risky sighting, via [`src/services/communityService.js`](src/services/communityService.js) |
+| **Facebook Graph — place name from location** (`/v22.0/pages/search`, `type=place`; needs Meta's "Page Public Metadata Access" approval) | `VITE_FACEBOOK_ACCESS_TOKEN` (optional `VITE_FACEBOOK_BASE_URL`) | [`src/connectors/facebookGraph/index.js`](src/connectors/facebookGraph/index.js) → `placeAt(latitude, longitude)` | `src/state/AppContext.jsx` (every post is stacked under its place) |
+| **Facebook Graph — nearby verified experts + verification requests** | `VITE_FACEBOOK_ACCESS_TOKEN`, `VITE_FACEBOOK_NEARBY_EXPERTS_PATH` | [`src/connectors/facebookGraph/index.js`](src/connectors/facebookGraph/index.js) → `findNearbyExperts(latitude, longitude, specimenName)`, `requestVerification()` | Posting a risky sighting, via [`src/services/communityService.js`](src/services/communityService.js) |
 | **Your backend — sightings, votes, users** | `VITE_API_BASE_URL` | [`src/services/sightingsService.js`](src/services/sightingsService.js) (`/sightings`, `/sightings/:id/votes`) · [`src/services/profileService.js`](src/services/profileService.js) (`/users/:id`) | Realm, Circle, Me |
 | **Your backend — log in / sign up** | `VITE_API_BASE_URL` | [`src/services/authService.js`](src/services/authService.js) (`POST /auth/signup`, `POST /auth/login`, each returning `{ token, user: { name, email } }`). Until it is set, accounts are saved on the device only | Welcome screen |
 | **Your backend — live hazard alerts (WebSocket)** | `VITE_ALERTS_WS_URL` | [`src/services/alertService.js`](src/services/alertService.js) | Toast alerts on every screen |
@@ -63,7 +63,7 @@ Other places you may want to change:
 | 🔮 Realm | `RealmScreen` | Magic mirror search, scrying map with radius + category filters, geographic pattern detection, feed |
 | 👻 Haunts | `GhostScreen` | Live 18.9 Hz spectrum, Muse investigator warnings, voice questions, haunted places |
 | 🪄 Capture | `CaptureScreen` | **Live** camera only — no uploads. Seals time + GPS + SHA-256 into every photo |
-| (flow) | `ScanScreen` | Gemini → SerpAPI → Muse pipeline, result card with disclaimers, post to the Realm |
+| (flow) | `ScanScreen` | SerpAPI Google Lens → Muse Spark pipeline, result card with disclaimers, post to the Realm |
 | 🧙 Circle | `CommunityScreen` | Anonymous recent posts grouped by place (nearest first, with distance), Verification Council voting |
 | 👑 Me | `ProfileScreen` | Rank, stats, badges, Muse potion bio, my sightings |
 
@@ -74,11 +74,10 @@ src/
   config/        env.js (ALL keys/endpoints) · app.js (constants, copy) · categories.js
   connectors/    ← plug real integrations in here; each folder = one external service
     _shared/       http.js (fetch wrapper) · withFallback.js (real call → mock)
-    gemini/        identifyImage()          index.js (real) · mock.js
-    serpapi/       lookupSpecies()          index.js (real) · mock.js
-    muse/          narrate/transcribe/speak/recordClip   index.js · mock.js
+    serpapi/       visualSearch() (Google Lens via server/)   index.js · lens.js · mock.js
+    muse/          analyzeScan/narrate/transcribe/speak/recordClip   index.js · mock.js
     facebookGraph/ placeAt/findNearbyExperts/requestVerification   index.js · mock.js
-    infrasound/    analyzer.js (pure FFT maths) · index.js (Web Audio + optional backend report)
+    infrasound/    analyzer.js (InfrasoundAnalyzer: FFT maths + test tone) · index.js (Web Audio + optional backend report)
     camera/        live capture + proof stamp          location/   geolocation
   services/      domain logic that combines connectors: sightings, scan, community, profile, alerts
   state/         AppContext.jsx — global state + actions
@@ -99,21 +98,21 @@ mock if a call fails, so the demo never dies).
 
 | Connector | Env vars | Notes |
 | --- | --- | --- |
-| Gemini | `VITE_GEMINI_API_KEY`, `VITE_GEMINI_MODEL` | Returns identity, hazard 0–5, look-alikes and a `looksSynthetic` check |
-| SerpAPI | `VITE_SERPAPI_API_KEY` | Browser calls go through the Vite dev proxy (CORS). In production set `VITE_SERPAPI_BASE_URL` to your own backend proxy |
-| Muse | `VITE_MUSE_AGENT_URL`, `VITE_MUSE_TRANSCRIBE_URL`, `VITE_MUSE_API_KEY` | Agent: `POST {event, context}` → `{message}`. Transcribe: multipart `audio` → `{text}`. **Placeholders — match your real Muse contract in `connectors/muse/index.js`** |
+| SerpAPI Lens | `server/.env`: `SERPAPI_API_KEY`, `PUBLIC_BASE_URL` | Lens only accepts an image URL, so `server/index.js` hosts the photo for the length of one lookup, calls SerpAPI, deletes it and returns the matches (6 lookups/min per visitor). Real results need the public HTTPS server; locally the scan uses demo data |
+| Muse | `VITE_MUSE_AGENT_URL`, `VITE_MUSE_SCAN_URL` (optional), `VITE_MUSE_TRANSCRIBE_URL`, `VITE_MUSE_API_KEY` | Scan: `POST {event:"scan_analysis", system_prompt, raw_visual_matches, environmental_infrasound_hz, location_context, user_stats, lens_text}` → JSON with `identified_object`, `hazard_level`, `audio_narrative_script`, `muse_image_prompt` (+ the card fields listed in the prompt). Agent: `POST {event, context}` → `{message}`. Transcribe: multipart `audio` → `{text}`. **Placeholders — match your real Muse contract in `connectors/muse/index.js`** |
 | Facebook Graph | `VITE_FACEBOOK_ACCESS_TOKEN`, `VITE_FACEBOOK_NEARBY_EXPERTS_PATH` | Graph has no ready-made "nearby verified experts" route; point the path at your own endpoint or adapt `connectors/facebookGraph/index.js` |
 | Wanderlust API | `VITE_API_BASE_URL`, `VITE_ALERTS_WS_URL` | Expected routes: `GET/POST /sightings`, `POST /sightings/:id/votes`, `GET /users/:id`; WebSocket pushes new sighting JSON |
 | Infrasound backend | `VITE_INFRASOUND_BACKEND_URL` | Optional Python (scipy/librosa) service; receives `{coords, hz, deltaDb}` on each spike |
 
 ## How the key features work
 
-- **Fear Frequency (18.9 Hz):** `AnalyserNode` (32768-point FFT, ~1.5 Hz bins) → `analyzer.js` compares the
-  18.9 Hz ± 1.5 Hz band to the surrounding noise floor. A spike ≥ 12 dB makes Muse speak a warning. Many phone
-  mics high-pass below ~20 Hz, so **Test tone** injects a synthetic 18.9 Hz into the same analyser for demos.
+- **Fear Frequency (18.9 Hz):** `InfrasoundAnalyzer` (32768-point FFT; 48000 / 32768 ≈ 1.465 Hz per bin, so
+  18.9 Hz is bin 13) compares that bin with the ambient noise floor (average of 30–60 Hz). A spike ≥ 12 dB makes
+  Muse speak a warning. Many phone mics high-pass below ~20 Hz, so `injectTestTone()` / `stopTestTone()` feed a
+  synthetic 18.9 Hz sine (gain 0.05) into the same analyser for demos — never to the speakers.
 - **Anti-fake capture:** there is no file picker anywhere. Photos come from the live `<video>`, carry a
-  `proof` (time, GPS, SHA-256) for server-side re-checking, and Gemini additionally flags AI-generated or
-  re-photographed images. Demo frames (no camera) are marked `live: false` and show "Unverified capture".
+  `proof` from `generateProofStamp()` (SHA-256 of timestamp + frozen GPS + image size) for server-side
+  re-checking, and Muse additionally flags AI-generated or re-photographed images. Demo frames (no camera) are marked `live: false` and show "Unverified capture".
 - **Hazard alerts:** posting or receiving a sighting with hazard ≥ 3 within 5 km raises a toast with safety
   disclaimers. Offline, one incoming alert is simulated ~9 s after launch.
 - **Patterns:** `detectPatterns()` buckets sightings into ~11 km cells; clusters get a dashed halo on the map.

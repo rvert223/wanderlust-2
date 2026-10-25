@@ -1,6 +1,6 @@
-// Offline stand-in for Gemini: returns a random catalogue entry after a short "thinking" delay.
-// The shape matches what identifyWithGemini returns, so the UI cannot tell the difference.
-const CATALOGUE = [
+// Demo specimens used by the offline fallbacks of the scan pipeline (SerpAPI Lens mock + Muse mock).
+// Delete or extend freely — the real pipeline never reads this file.
+export const DEMO_SPECIMENS = [
   {
     name: 'Destroying Angel', scientificName: 'Amanita bisporigera', category: 'flora', hazard: 5, confidence: 0.91, emoji: '🍄',
     summary: 'A pure-white woodland mushroom with a skirt-like ring and a bulbous, cup-wrapped base.',
@@ -32,15 +32,3 @@ const CATALOGUE = [
     lookalikes: ['Scarlet kingsnake', 'Milk snake'],
   },
 ];
-
-const pickRandom = (items) => items[Math.floor(Math.random() * items.length)];
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-export async function identifyMock() {
-  await wait(1400);
-  return {
-    ...pickRandom(CATALOGUE),
-    looksSynthetic: false,
-    authenticityNote: 'Natural lighting, sensor noise and depth of field are consistent with a real live capture.',
-  };
-}

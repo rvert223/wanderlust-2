@@ -1,5 +1,5 @@
-// Scan (screen 2 of 2): runs the identification pipeline on the captured photo (Gemini ->
-// SerpAPI -> Muse), shows the result, and lets the user post it to the Realm — which pings
+// Scan (screen 2 of 2): runs the identification pipeline on the captured photo (SerpAPI Google
+// Lens -> Muse Spark), shows the result, and lets the user post it to the Realm — which pings
 // nearby verifiers for anything risky.
 import { useEffect, useRef, useState } from 'react';
 import GlassCard from '../components/GlassCard';
@@ -8,14 +8,15 @@ import ScanResultCard from '../components/ScanResultCard';
 import ScreenHeader from '../components/ScreenHeader';
 import { CATEGORIES } from '../config/categories';
 import { askVerifiers } from '../services/communityService';
-import { SCAN_STEPS, scanPhoto } from '../services/scanService';
+import { SCAN_STEPS, executeFullScanPipeline } from '../services/scanService';
 import { useApp } from '../state/AppContext';
 import { celebrate } from '../utils/sparkle';
 
 const RISKY_HAZARD = 2; // posts at or above this ask nearby experts to verify
+const INFRASOUND_FRESH_MS = 30 * 60 * 1000; // a Haunts spike older than this no longer describes "here"
 
 export default function ScanScreen() {
-  const { draft, setDraft, navigate, bumpStat, postSighting, notify, location } = useApp();
+  const { draft, setDraft, navigate, bumpStat, postSighting, notify, location, user, lastInfrasound } = useApp();
   const [step, setStep] = useState(0);
   const [posting, setPosting] = useState(false);
   const startedFor = useRef(null); // guards against StrictMode double-running the pipeline
@@ -23,7 +24,8 @@ export default function ScanScreen() {
   useEffect(() => {
     if (!draft || draft.result || startedFor.current === draft.id) return;
     startedFor.current = draft.id;
-    scanPhoto(draft, setStep)
+    const recentHz = lastInfrasound && Date.now() - lastInfrasound.at < INFRASOUND_FRESH_MS ? lastInfrasound.hz : null;
+    executeFullScanPipeline(draft, { placeName: location.placeName, currentHz: recentHz, userStats: user.stats }, setStep)
       .then((result) => {
         setDraft((current) => (current?.id === draft.id ? { ...current, result } : current));
         bumpStat('scanned');
