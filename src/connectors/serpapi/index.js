@@ -8,7 +8,10 @@ import { withFallback } from '../_shared/withFallback';
 import { consolidateLens } from './lens';
 import { visualSearchMock } from './mock';
 
-const LENS_TIMEOUT_MS = 50000; // the server waits up to 45 s for SerpAPI
+const LENS_TIMEOUT_MS = 50000; // the server answers within ~35 s (its own Lens time budget)
+// Answers that mean "there is no Lens server here at all" (no API route / not configured) — only these
+// may fall back to demo data.
+const NO_LENS_SERVER = /-> (404|405|503)$/;
 
 const dataUrlToBlob = async (dataUrl) => (await fetch(dataUrl)).blob();
 
@@ -21,13 +24,12 @@ export const visualSearch = withFallback(
     try {
       return consolidateLens(await http.post(CONFIG.serpapi.lensUrl, blob, { timeoutMs: LENS_TIMEOUT_MS }));
     } catch (error) {
-      // The server is live but Lens itself failed (SerpAPI error / timeout): report "nothing found"
-      // so Muse says it can't identify it — never substitute a demo species for a real photo.
-      if (/-> 50[24]$/.test(error.message)) {
-        console.warn('[serpapi-lens] Lens failed on the server; continuing with no matches', error);
-        return consolidateLens({});
-      }
-      throw error; // server missing / not configured: the demo fallback below applies
+      // No Lens server at all (static hosting, local dev, not configured): the demo fallback applies.
+      if (NO_LENS_SERVER.test(error.message)) throw error;
+      // Anything else — SerpAPI error, rate limit, slow answer, dropped connection — happened on a real
+      // scan: continue with no matches so Muse says it can't identify it. Never a demo species.
+      console.warn('[serpapi-lens] Lens failed; continuing with no matches', error);
+      return consolidateLens({});
     }
   },
   visualSearchMock,

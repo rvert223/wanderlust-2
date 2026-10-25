@@ -40,7 +40,10 @@ const UPLOAD_DIR = join(dirname(fileURLToPath(import.meta.url)), 'uploads');
 const MAX_UPLOAD_BYTES = 6 * 1024 * 1024;
 const MAX_JSON_BYTES = 64 * 1024;
 const UPLOAD_TTL_MS = 10 * 60 * 1000; // safety sweep for photos a crashed lookup left behind
-const LENS_TIMEOUT_MS = 45_000;
+// One scan may make up to three SerpAPI requests (search, AI-overview text, retry). Together they get
+// LENS_BUDGET_MS, so the server always answers before the website stops waiting (50 s).
+const LENS_BUDGET_MS = 35_000;
+const MIN_REQUEST_MS = 3_000; // don't start a request with less time than this left
 const TOP_MATCHES = 8;
 // Requests per visitor per minute — every call spends paid API credit.
 const LIMITS_PER_MINUTE = { lens: 6, muse: 20, transcribe: 10, place: 30 };
@@ -113,11 +116,22 @@ function trimLens(result) {
   return { visual_matches: bestMatches, knowledge_graph: knowledge, suggested_titles: suggestedTitles, text_snippets: textSnippets, ai_overview: overviewText };
 }
 
-/** One SerpAPI request. "No results" is an empty answer, not an error. */
-async function serpapi(params) {
+/**
+ * One SerpAPI request within the scan's time budget. "No results" and running out of time are empty
+ * answers ({ no_results } / { timed_out }), not errors.
+ */
+async function serpapi(params, deadline) {
+  const remaining = deadline - Date.now();
+  if (remaining < MIN_REQUEST_MS) return { timed_out: true };
   const search = new URL(SERPAPI_URL);
   Object.entries({ ...params, api_key: SERPAPI_API_KEY }).forEach(([key, value]) => search.searchParams.set(key, value));
-  const serpResponse = await fetch(search, { signal: AbortSignal.timeout(LENS_TIMEOUT_MS) });
+  let serpResponse;
+  try {
+    serpResponse = await fetch(search, { signal: AbortSignal.timeout(remaining) });
+  } catch (error) {
+    if (error.name === 'TimeoutError' || error.name === 'AbortError') return { timed_out: true };
+    throw error;
+  }
   const result = await serpResponse.json();
   if (result.error && /hasn't returned any results/i.test(result.error)) return { ...result, error: undefined, no_results: true };
   if (!serpResponse.ok || result.error) throw Object.assign(new Error(result.error || `SerpAPI answered ${serpResponse.status}`), { status: 502, expose: true });
@@ -125,14 +139,14 @@ async function serpapi(params) {
 }
 
 /** One Google Lens search for a photo URL. `type` narrows it (e.g. 'visual_matches'). */
-async function searchLens(imageUrl, type) {
+async function searchLens(imageUrl, type, deadline) {
   // no_cache: Lens may hand back a short-lived AI-overview token that a cached answer would have expired.
-  const result = await serpapi({ engine: 'google_lens', url: imageUrl, no_cache: 'true', ...(type && { type }) });
+  const result = await serpapi({ engine: 'google_lens', url: imageUrl, no_cache: 'true', ...(type && { type }) }, deadline);
   // The overview often arrives as a token only; fetch its text right away (counts as one more search).
   const token = result.ai_overview?.page_token;
   if (token && !result.ai_overview.text_blocks) {
     try {
-      const full = await serpapi({ engine: 'google_ai_overview', page_token: token });
+      const full = await serpapi({ engine: 'google_ai_overview', page_token: token }, deadline);
       if (full.ai_overview) result.ai_overview = full.ai_overview;
     } catch (error) {
       console.warn('[lens] could not fetch the AI overview text:', error.message);
@@ -156,14 +170,16 @@ async function lens(request, response) {
 
   try {
     const imageUrl = `${PUBLIC_BASE_URL}/api/serp/uploads/${name}`;
-    let result = await searchLens(imageUrl);
+    const deadline = Date.now() + LENS_BUDGET_MS;
+    let result = await searchLens(imageUrl, undefined, deadline);
     let trimmed = trimLens(result);
     // Neither matches nor an overview: ask once more, for visual matches only (one extra search).
     if (!trimmed.visual_matches.length && !trimmed.ai_overview) {
-      result = await searchLens(imageUrl, 'visual_matches');
+      result = await searchLens(imageUrl, 'visual_matches', deadline);
       trimmed = trimLens(result);
     }
     const overviewKeys = result.ai_overview ? Object.keys(result.ai_overview).join('+') : 'none';
+    if (result.timed_out) console.log(`[lens] stopped at the ${LENS_BUDGET_MS / 1000} s limit`);
     console.log(`[lens] ${trimmed.visual_matches.length} matches · top: ${trimmed.visual_matches[0]?.title ?? '—'} · overview: ${trimmed.ai_overview ? `yes (${trimmed.ai_overview.slice(0, 60)}…)` : 'no'} · keys: ${Object.keys(result).join(',')} · ai_overview: ${overviewKeys}`);
     return sendJson(response, 200, trimmed);
   } finally {
