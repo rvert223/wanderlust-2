@@ -184,35 +184,104 @@ curl -s http://127.0.0.1:8787/api/health
 
 The last line should print `{"ok":true,"lensConfigured":true}`.
 
-**4. Route `/api/` through nginx.** Open the nginx settings (certbot's HTTPS lines in this file
-stay as they are):
+**4. Route `/api/` through nginx.** This rewrites the whole nginx settings file, keeping the HTTPS
+certificate certbot already issued. Set your address on the first line, then paste the whole block:
 
 ```bash
-nano /etc/nginx/sites-available/default
-```
+DOMAIN="66-42-84-210.sslip.io"   # your IP with dashes + .sslip.io
+cp /etc/nginx/sites-available/default /root/nginx-default.backup
+ls /etc/letsencrypt/live/$DOMAIN/fullchain.pem /etc/letsencrypt/options-ssl-nginx.conf /etc/letsencrypt/ssl-dhparams.pem && \
+cat > /etc/nginx/sites-available/default <<NGINX
+server {
+  listen 443 ssl;
+  server_name $DOMAIN;
+  ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
+  include /etc/letsencrypt/options-ssl-nginx.conf;
+  ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 
-Inside **each** `server { … }` block that contains `root /opt/wanderlust/dist;`, delete the
-`location /proxy/serpapi/ { … }` line if it is there, and add:
-
-```nginx
+  root /opt/wanderlust/dist;
   client_max_body_size 8m;
+  location / { try_files \$uri /index.html; }
   location /api/ {
     proxy_pass http://127.0.0.1:8787;
-    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Real-IP \$remote_addr;
     proxy_read_timeout 60s;
   }
+}
+
+server {
+  listen 80 default_server;
+  server_name $DOMAIN;
+  return 301 https://\$host\$request_uri;
+}
+NGINX
+nginx -t && systemctl reload nginx
 ```
 
-Save, then:
+If `ls` reports a missing file, stop: the certificate isn't there yet (see "Could not automatically
+find a matching server block" under Troubleshooting). If anything goes wrong,
+`cp /root/nginx-default.backup /etc/nginx/sites-available/default && systemctl reload nginx` restores
+the old settings.
+
+**5. Check it from the outside** (this goes through nginx, the way phones do — a check on
+`127.0.0.1` skips nginx and can pass even when phones can't get through):
 
 ```bash
-nginx -t && systemctl reload nginx
-curl -s https://<your-ip-with-dashes>.sslip.io/api/health
+curl -s https://$DOMAIN/api/health
 ```
 
-If that prints `{"ok":true,"lensConfigured":true}`, scans now use Google Lens. Any old
+`{"ok":true,"lensConfigured":true,…}` means scans now use Google Lens. Any old
 `VITE_SERPAPI_API_KEY` / `VITE_GEMINI_API_KEY` lines in `/opt/wanderlust/.env` are no longer used
 and can be deleted.
+
+## When Meta blocks the server: relay Muse through a laptop
+
+Meta's Model API answers normal internet connections but, at the time of writing, **not cloud
+servers**: from Vultr (Atlanta and Chicago, IPv4 and IPv6) a working key gets
+`GET /v1/models` → `{"data":[]}` and every model → `404 model_not_found`, while the same key from a
+laptop lists every model. Check it on the server:
+
+```bash
+K=$(grep '^MUSE_API_KEY=' /opt/wanderlust/server/.env | cut -d= -f2-)
+curl -s https://api.meta.ai/v1/models -H "Authorization: Bearer $K" | head -c 200; echo
+```
+
+If that list is empty but the same key lists models from a laptop (Mac Terminal:
+`curl -s https://api.meta.ai/v1/models -H "Authorization: Bearer YOUR_KEY"`; Windows PowerShell:
+use `curl.exe`, not `curl`), first ask the Meta team to allow server use. For a demo in the
+meantime, send the server's Muse requests through that laptop with a free Cloudflare tunnel. Ask
+the Meta team whether relaying is acceptable before relying on it.
+
+**1. On the laptop, install `cloudflared`.**
+- Mac (Intel): `cd ~ && curl -L -o cloudflared.tgz https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-darwin-amd64.tgz && tar -xzf cloudflared.tgz && chmod +x cloudflared`
+- Mac (Apple silicon): the same with `cloudflared-darwin-arm64.tgz`
+- Windows: `winget install Cloudflare.cloudflared`
+
+**2. Start the tunnel and leave the window open:**
+
+```bash
+~/cloudflared tunnel --url https://api.meta.ai --http-host-header api.meta.ai --origin-server-name api.meta.ai
+```
+
+(Windows: `cloudflared tunnel …` with the same options.) Scroll up in its output to the box
+"Your quick Tunnel has been created!" and copy the `https://….trycloudflare.com` link.
+
+**3. On the server, point Muse at the tunnel** (put your link on the first line):
+
+```bash
+LINK="https://random-words.trycloudflare.com"
+cd /opt/wanderlust && sed -i '/^MUSE_BASE_URL=/d' server/.env && echo "MUSE_BASE_URL=$LINK/v1" >> server/.env && systemctl restart wanderlust-api && sleep 3 && curl -s http://127.0.0.1:8787/api/muse/test; echo
+```
+
+`{"ok":true,"model":"muse-spark-1.3","reply":"ready"}` means Muse is live through the laptop. A new
+tunnel link can take a minute to start working.
+
+- Keep the laptop awake, plugged in and online with the tunnel window open; if it stops, scans fall
+  back to the cautious "unconfirmed" identification.
+- Restarting `cloudflared` gives a new link: repeat step 3 with it.
+- To call Meta directly again (once the server is allowed):
+  `sed -i '/^MUSE_BASE_URL=/d' /opt/wanderlust/server/.env && systemctl restart wanderlust-api`
 
 ## Troubleshooting
 
@@ -228,10 +297,33 @@ journalctl -u wanderlust-api -n 30    # its recent log (Lens errors show up here
 curl -s http://127.0.0.1:8787/api/health
 ```
 
-**Scans always show the same few demo species** — Lens isn't being reached. Check that
-`/api/health` says `"lensConfigured":true`, and that `PUBLIC_BASE_URL` in `server/.env` is the
-site's `https://…sslip.io` address (Google downloads the photo from there). Then
-`systemctl restart wanderlust-api`.
+**Scans always show the same few demo species** (Destroying Angel, Poison Hemlock, Castor Bean
+Plant, Jimsonweed, Texas Coral Snake) — the scan isn't reaching Lens or Muse. See what phones'
+requests got:
+
+```bash
+grep -E "api/serp/lens|api/muse/scan" /var/log/nginx/access.log | tail -4 | awk '{print $7, $9}'
+```
+
+- **`405`** — nginx has no `/api/` route, so it refuses the upload. Do step 4 of "Upgrading an
+  existing server".
+- **`502`** — the API server answered with an error; `journalctl -u wanderlust-api -n 30 --no-pager`
+  shows SerpAPI's or Meta's message.
+- **`429`** — the per-minute scan limit; wait a minute.
+- **No lines at all** — the phone is showing an old copy of the site; close the tab and reopen it.
+
+Also check that `https://<your-site>/api/health` says `"lensConfigured":true`, and that
+`PUBLIC_BASE_URL` in `server/.env` is the site's `https://…sslip.io` address (Google downloads the
+photo from there), then `systemctl restart wanderlust-api`.
+
+**`/api/muse/test` says `Muse answered 404`** — Meta doesn't recognise the model for this request.
+Run `journalctl -u wanderlust-api -n 60 --no-pager | grep "\[muse\]"`: `model_not_found` with an
+empty `/v1/models` list means Meta is blocking the server (see "When Meta blocks the server").
+`Muse answered 401` means the key is wrong — re-copy it.
+
+**`/api/muse/test` says `"reply":""`** — the server has old code from before Muse Spark's reasoning
+allowance was raised (`grep -c MAX_TOKENS server/muse.js` prints `0`). Run
+`cd /opt/wanderlust && git pull && systemctl restart wanderlust-api`.
 
 **"Could not automatically find a matching server block"** (servers made with the first version of
 the script, which used `server_name _;`):
