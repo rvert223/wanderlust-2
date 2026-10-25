@@ -49,7 +49,7 @@ export default function RealmScreen() {
       <GlassCard className="map-card">
         <div className="map-frame">
           <EnchantedMap center={location.coords} sightings={visible} patterns={patterns} radiusKm={radiusKm} selectedId={selectedId} onSelect={setSelectedId} />
-          <span className="photo-pill map-place"><Icon name="target" /> {location.placeName}{location.approximate && ' (approximate)'}</span>
+          <span className="photo-pill map-place"><Icon name="target" /> {location.placeName}{location.approximate && ' (approximate)'}{location.demo && ' · demo'}</span>
         </div>
         <p className="map-caption">
           <span><i className="dot" /> {visible.length} sighting{visible.length === 1 ? '' : 's'} within {formatDistance(radiusKm)}</span>

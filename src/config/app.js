@@ -4,6 +4,10 @@ export const TAGLINE = 'mirror, mirror on the wall, where to go to see it all?';
 // Used until the browser grants geolocation (downtown Austin, TX).
 export const DEFAULT_CENTER = { lat: 30.2672, lng: -97.7431 };
 
+// Live location: ignore GPS jitter below MIN_MOVE_M, and only look the place name up again after
+// moving PLACE_REFRESH_M (each lookup may be a Facebook Graph call).
+export const LOCATION = { minMoveM: 25, placeRefreshM: 250, gpsMaxAgeMs: 10000 };
+
 // "Scry radius" options on the map, in kilometres.
 export const RADII = [
   { km: 25, label: 'Nearby' },

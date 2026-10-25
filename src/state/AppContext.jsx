@@ -1,12 +1,12 @@
 // Global app state + actions, shared through React context (`useApp()`).
 // Screens read state and call actions; all network/storage work is delegated to services.
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { ALERT_RADIUS_KM, DEFAULT_CENTER } from '../config/app';
+import { ALERT_RADIUS_KM, DEFAULT_CENTER, LOCATION } from '../config/app';
 import { placeAt } from '../connectors/facebookGraph';
-import { getCurrentPosition } from '../connectors/location';
 import { narrate } from '../connectors/muse';
 import { subscribeToAlerts } from '../services/alertService';
 import * as auth from '../services/authService';
+import { loadLocationMode, saveLocationMode, startLocationSource } from '../services/locationService';
 import { loadUser, rankFor, saveUser } from '../services/profileService';
 import { createSighting, listSightings, voteOnSighting } from '../services/sightingsService';
 import { distanceKm } from '../utils/geo';
@@ -29,6 +29,7 @@ export function AppProvider({ children }) {
   const [toasts, setToasts] = useState([]);
   const [session, setSession] = useState(auth.loadSession); // signed-in account, or null
   const [lastInfrasound, setLastInfrasound] = useState(null); // latest 18.9 Hz spike: { hz, deltaDb, at }
+  const [locationMode, setLocationModeState] = useState(loadLocationMode); // 'live' | 'walk' | demo location id
 
   // ---- UI actions -------------------------------------------------------
   const navigate = (next) => {
@@ -79,15 +80,55 @@ export function AppProvider({ children }) {
     }
   };
 
-  // ---- Boot: location, place name, sightings ----------------------------
+  const setLocationMode = (mode) => {
+    saveLocationMode(mode);
+    setLocationModeState(mode);
+  };
+
+  // ---- Boot: sightings ---------------------------------------------------
   useEffect(() => {
     listSightings().then(setSightings);
-    getCurrentPosition().then(async ({ coords, approximate }) => {
-      setLocation((current) => ({ ...current, coords, approximate }));
-      const placeName = await placeAt(coords.lat, coords.lng);
-      setLocation((current) => ({ ...current, placeName }));
-    });
   }, []);
+
+  // ---- Location: followed continuously from the chosen source -------------
+  // Small GPS jitter is ignored (LOCATION.minMoveM) and the place name is only looked up again
+  // after a real move (LOCATION.placeRefreshM). Demo locations carry their own place name.
+  useEffect(() => {
+    let cancelled = false;
+    let last = null; // { coords, approximate } last applied
+    let lastPlaceCoords = null;
+    let placeLookup = 0; // only the newest place-name lookup may write its answer
+    const metersBetween = (a, b) => distanceKm(a, b) * 1000;
+
+    const stop = startLocationSource(locationMode, async (reading) => {
+      const moved = last ? metersBetween(last.coords, reading.coords) : Infinity;
+      if (moved < LOCATION.minMoveM && last.approximate === reading.approximate) return;
+      last = reading;
+      setLocation((current) => ({
+        ...current,
+        coords: reading.coords,
+        approximate: reading.approximate,
+        demo: Boolean(reading.demo),
+        ...(reading.placeName && { placeName: reading.placeName }),
+      }));
+
+      if (reading.placeName) {
+        lastPlaceCoords = reading.coords;
+        placeLookup += 1; // a demo name beats any lookup still in flight
+        return;
+      }
+      if (lastPlaceCoords && metersBetween(lastPlaceCoords, reading.coords) < LOCATION.placeRefreshM) return;
+      lastPlaceCoords = reading.coords;
+      const lookup = ++placeLookup;
+      const placeName = await placeAt(reading.coords.lat, reading.coords.lng);
+      if (!cancelled && lookup === placeLookup) setLocation((current) => ({ ...current, placeName }));
+    });
+
+    return () => {
+      cancelled = true;
+      stop();
+    };
+  }, [locationMode]);
 
   // ---- Nearby hazard alerts (re-subscribes when the user's position changes) ----
   useEffect(
@@ -118,7 +159,7 @@ export function AppProvider({ children }) {
   const value = {
     route, navigate, location, sightings, user, draft, setDraft, selectedId, setSelectedId,
     profileId, openProfile: setProfileId, toasts, notify, dismissToast, updateUser, bumpStat, postSighting, vote,
-    session, signUp, logIn, signOut, lastInfrasound, recordInfrasound: setLastInfrasound,
+    session, signUp, logIn, signOut, lastInfrasound, recordInfrasound: setLastInfrasound, locationMode, setLocationMode,
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
