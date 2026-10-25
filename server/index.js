@@ -113,16 +113,31 @@ function trimLens(result) {
   return { visual_matches: bestMatches, knowledge_graph: knowledge, suggested_titles: suggestedTitles, text_snippets: textSnippets, ai_overview: overviewText };
 }
 
-/** One SerpAPI Google Lens search for a photo URL. `type` narrows it (e.g. 'visual_matches'). */
-async function searchLens(imageUrl, type) {
+/** One SerpAPI request. "No results" is an empty answer, not an error. */
+async function serpapi(params) {
   const search = new URL(SERPAPI_URL);
-  search.searchParams.set('engine', 'google_lens');
-  search.searchParams.set('url', imageUrl);
-  if (type) search.searchParams.set('type', type);
-  search.searchParams.set('api_key', SERPAPI_API_KEY);
-  const lensResponse = await fetch(search, { signal: AbortSignal.timeout(LENS_TIMEOUT_MS) });
-  const result = await lensResponse.json();
-  if (!lensResponse.ok || result.error) throw Object.assign(new Error(result.error || `SerpAPI answered ${lensResponse.status}`), { status: 502, expose: true });
+  Object.entries({ ...params, api_key: SERPAPI_API_KEY }).forEach(([key, value]) => search.searchParams.set(key, value));
+  const serpResponse = await fetch(search, { signal: AbortSignal.timeout(LENS_TIMEOUT_MS) });
+  const result = await serpResponse.json();
+  if (result.error && /hasn't returned any results/i.test(result.error)) return { ...result, error: undefined, no_results: true };
+  if (!serpResponse.ok || result.error) throw Object.assign(new Error(result.error || `SerpAPI answered ${serpResponse.status}`), { status: 502, expose: true });
+  return result;
+}
+
+/** One Google Lens search for a photo URL. `type` narrows it (e.g. 'visual_matches'). */
+async function searchLens(imageUrl, type) {
+  // no_cache: Lens may hand back a short-lived AI-overview token that a cached answer would have expired.
+  const result = await serpapi({ engine: 'google_lens', url: imageUrl, no_cache: 'true', ...(type && { type }) });
+  // The overview often arrives as a token only; fetch its text right away (counts as one more search).
+  const token = result.ai_overview?.page_token;
+  if (token && !result.ai_overview.text_blocks) {
+    try {
+      const full = await serpapi({ engine: 'google_ai_overview', page_token: token });
+      if (full.ai_overview) result.ai_overview = full.ai_overview;
+    } catch (error) {
+      console.warn('[lens] could not fetch the AI overview text:', error.message);
+    }
+  }
   return result;
 }
 
@@ -148,7 +163,8 @@ async function lens(request, response) {
       result = await searchLens(imageUrl, 'visual_matches');
       trimmed = trimLens(result);
     }
-    console.log(`[lens] ${trimmed.visual_matches.length} matches · top: ${trimmed.visual_matches[0]?.title ?? '—'} · overview: ${trimmed.ai_overview ? 'yes' : 'no'} · keys: ${Object.keys(result).join(',')}`);
+    const overviewKeys = result.ai_overview ? Object.keys(result.ai_overview).join('+') : 'none';
+    console.log(`[lens] ${trimmed.visual_matches.length} matches · top: ${trimmed.visual_matches[0]?.title ?? '—'} · overview: ${trimmed.ai_overview ? `yes (${trimmed.ai_overview.slice(0, 60)}…)` : 'no'} · keys: ${Object.keys(result).join(',')} · ai_overview: ${overviewKeys}`);
     return sendJson(response, 200, trimmed);
   } finally {
     await rm(file, { force: true });

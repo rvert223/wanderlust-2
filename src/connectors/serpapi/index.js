@@ -18,7 +18,17 @@ export const visualSearch = withFallback(
   () => isConfigured(CONFIG.serpapi.lensUrl),
   async (photo) => {
     const blob = photo.blob ?? (await dataUrlToBlob(photo.dataUrl));
-    return consolidateLens(await http.post(CONFIG.serpapi.lensUrl, blob, { timeoutMs: LENS_TIMEOUT_MS }));
+    try {
+      return consolidateLens(await http.post(CONFIG.serpapi.lensUrl, blob, { timeoutMs: LENS_TIMEOUT_MS }));
+    } catch (error) {
+      // The server is live but Lens itself failed (SerpAPI error / timeout): report "nothing found"
+      // so Muse says it can't identify it — never substitute a demo species for a real photo.
+      if (/-> 50[24]$/.test(error.message)) {
+        console.warn('[serpapi-lens] Lens failed on the server; continuing with no matches', error);
+        return consolidateLens({});
+      }
+      throw error; // server missing / not configured: the demo fallback below applies
+    }
   },
   visualSearchMock,
 );
