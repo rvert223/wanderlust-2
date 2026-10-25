@@ -9,6 +9,9 @@ const MUSE_MODEL = process.env.MUSE_MODEL || 'muse-spark-1.3';
 const MUSE_TRANSCRIBE_MODEL = process.env.MUSE_TRANSCRIBE_MODEL || 'muse-voice-transcribe-1.0';
 const TIMEOUT_MS = 30_000;
 const MAX_CONTEXT_CHARS = 4000;
+// Muse Spark reasons before it answers, and those reasoning tokens count against max_tokens
+// (a one-word "Hello" reply used ~440). Keep these generous or the answer comes back empty.
+const MAX_TOKENS = { scan: 6000, narrate: 2000, test: 1500 };
 
 export const museConfigured = () => Boolean(MUSE_API_KEY);
 export const museModel = MUSE_MODEL;
@@ -69,9 +72,12 @@ async function chat(messages, maxTokens) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model: MUSE_MODEL, messages, max_tokens: maxTokens }),
   });
-  const content = data.choices?.[0]?.message?.content;
+  const choice = data.choices?.[0];
+  const content = choice?.message?.content;
   // Some models return content as a list of parts.
-  return Array.isArray(content) ? content.map((part) => part.text ?? '').join('') : content ?? '';
+  const text = Array.isArray(content) ? content.map((part) => part.text ?? '').join('') : content ?? '';
+  if (!text.trim() && choice?.finish_reason === 'length') throw apiError('Muse ran out of tokens before answering (raise MAX_TOKENS in server/muse.js)');
+  return text;
 }
 
 /** Finds the JSON object in a reply, tolerating ``` fences or a sentence around it. */
@@ -95,7 +101,7 @@ export async function analyzeScan(payload) {
   const reply = await chat([
     { role: 'system', content: SCAN_SYSTEM_PROMPT },
     { role: 'user', content: clip(input) },
-  ], 1500);
+  ], MAX_TOKENS.scan);
   const analysis = extractJson(reply);
   if (!analysis.identified_object) throw apiError('Muse reply has no identified_object');
   return analysis;
@@ -108,7 +114,7 @@ export async function narrate({ event, context }) {
   const message = await chat([
     { role: 'system', content: NARRATOR_PROMPT },
     { role: 'user', content: `${instruction}\nDetails: ${clip(context)}` },
-  ], 300);
+  ], MAX_TOKENS.narrate);
   return { message: message.trim() };
 }
 
@@ -125,6 +131,6 @@ export async function transcribe(audio, contentType) {
 
 /** GET /api/muse/test — a one-word round trip, to check the key, model and address. */
 export async function selfTest() {
-  const reply = await chat([{ role: 'user', content: 'Reply with exactly one word: ready' }], 50);
+  const reply = await chat([{ role: 'user', content: 'Reply with exactly one word: ready' }], MAX_TOKENS.test);
   return { ok: true, model: MUSE_MODEL, reply: reply.trim() };
 }
